@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <stdio.h>
 #include <string.h>
@@ -38,7 +38,7 @@ typedef void(*preset_writer_cb)();
 
 typedef struct
 {
-	char name[8];
+	char name[10];
 	preset_reader_cb read;
 	preset_writer_cb write;
 	child_state_t child_state;
@@ -81,7 +81,8 @@ preset_read_result_t handle_object(jsmntok_t tok,
 								   const char* text, size_t text_len,
 								   preset_section_handler_t* handlers, uint8_t handler_ct);
 
-preset_read_result_t preset_deserialize(FILE* fp, nvram_data_t* nvram, void* child_state_storage, 
+preset_read_result_t preset_deserialize(FILE* fp, nvram_data_t* nvram,
+										preset_object_state_t* object_state,
  										preset_section_handler_t* handlers, uint8_t handler_ct, 
 										char* textbuf, size_t textbuf_len, 
  										jsmntok_t* tokbuf, size_t tokbuf_len); 

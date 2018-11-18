@@ -5,7 +5,7 @@ CC = gcc
 default: program
 
 %.o: %.c $(HEADERS)
-	$(CC) -c $< -o $@
+	$(CC) -c $< -g -o $@
 
 program: $(OBJECTS)
 	$(CC) $(OBJECTS) -o $@

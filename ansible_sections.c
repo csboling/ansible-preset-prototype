@@ -1,4 +1,4 @@
-#include "ansible_sections.h"
+﻿#include "ansible_sections.h"
 #include "ansible_preset_internal.h"
 
 preset_object_state_t ansible_read_object_state;
@@ -10,7 +10,7 @@ preset_section_handler_t ansible_sections[ANSIBLE_SECTION_CT] = {
 	},
 	{
 		.name = "shared",
-		.read = ansible_read_shared_section,65
+		.read = ansible_read_shared_section,
 	},
 };
 preset_section_handler_t ansible_meta_handlers[] = {

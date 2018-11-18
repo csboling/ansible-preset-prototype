@@ -1,4 +1,4 @@
-#include "jsmn.h"
+﻿#include "jsmn.h"
 
 /**
  * Allocates a fresh unused token from the token pool.
@@ -218,7 +218,7 @@ int jsmn_parse(jsmn_parser *parser, const char *js, size_t len,
 					}
 				}
 				/* Error if unmatched closing bracket */
-#ifndef JSMN_UNMATCHED_OK
+#ifdef JSMN_UNMATCHED_ERROR
 				if (i == -1) return JSMN_ERROR_INVAL;
 #endif
 				for (; i >= 0; i--) {

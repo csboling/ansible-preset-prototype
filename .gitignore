@@ -1,0 +1,6 @@
+.vs/
+Debug/
+*.o
+*~
+program
+ansible-presets.json
