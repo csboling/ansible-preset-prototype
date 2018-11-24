@@ -12,11 +12,7 @@ preset_object_state_t object_state;
 
 int main()
 {
-	FILE* fp;
-
-	ansible_init_sections();
-  
-	fp = fopen("ansible-presets.json", "r");
+	FILE* fp = fopen("ansible-presets.json", "r");
 	result = preset_deserialize(fp,
 								&nvram, &object_state,
 								ansible_sections, ANSIBLE_SECTION_CT,

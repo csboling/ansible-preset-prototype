@@ -32,16 +32,17 @@ typedef struct {
 } child_state_t;
 
 typedef preset_read_result_t(*preset_reader_cb)(jsmntok_t token,
-	nvram_data_t* nvram, child_state_t* s,
+	nvram_data_t* nvram, child_state_t* s, void* handler_def,
 	const char* text, size_t text_len);
 typedef void(*preset_writer_cb)();
 
 typedef struct
 {
-	char name[10];
+	char name[16];
 	preset_reader_cb read;
 	preset_writer_cb write;
 	child_state_t child_state;
+	void* params;
 } preset_section_handler_t;
 
 typedef struct {
@@ -80,6 +81,14 @@ preset_read_result_t handle_object(jsmntok_t tok,
 								   nvram_data_t* nvram, child_state_t* s,
 								   const char* text, size_t text_len,
 								   preset_section_handler_t* handlers, uint8_t handler_ct);
+
+preset_read_result_t load_scalar(jsmntok_t tok,
+	nvram_data_t* nvram, child_state_t* s, void* handler_def,
+	const char* text, size_t text_len);
+typedef struct {
+	size_t dst_offset;
+	uint8_t dst_size;
+} load_scalar_params_t;
 
 preset_read_result_t preset_deserialize(FILE* fp, nvram_data_t* nvram,
 										preset_object_state_t* object_state,

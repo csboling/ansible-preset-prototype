@@ -7,10 +7,16 @@ preset_section_handler_t ansible_sections[ANSIBLE_SECTION_CT] = {
 	{
 		.name = "meta",
 		.read = ansible_read_meta_section,
+		.child_state = {
+			.state = &ansible_read_object_state,
+		},
 	},
 	{
 		.name = "shared",
 		.read = ansible_read_shared_section,
+		.child_state = {
+			.state = &ansible_read_object_state,
+		},
 	},
 };
 preset_section_handler_t ansible_meta_handlers[] = {
@@ -24,28 +30,33 @@ preset_section_handler_t ansible_meta_handlers[] = {
 	},
 	{
 		.name = "i2c_addr",
-		.read = ansible_save_i2c_addr,
+		.read = load_scalar,
+		.params = &((load_scalar_params_t){
+			.dst_offset = offsetof(nvram_data_t, state.i2c_addr),
+			.dst_size = sizeof(uint8_t),
+		}),
 	},
 };
 preset_section_handler_t ansible_shared_handlers[] = {
 	{
 		.name = "scales",
 		.read = ansible_save_scales,
+		.child_state = {
+			.state = &ansible_bufarray_state,
+		},
 	},
 };
-
-void ansible_init_sections() {
-	ansible_sections[0].child_state.state = &ansible_read_object_state;
-	ansible_sections[1].child_state.state = &ansible_read_object_state;
-
-	ansible_shared_handlers[0].child_state.state = &ansible_bufarray_state;
-}
+preset_section_handler_t ansible_tt_handlers[] = {
+	{
+		.name = "clock_period",
+	},
+};
 
 /////////
 // meta
 
 preset_read_result_t ansible_read_meta_section(jsmntok_t token,
-	nvram_data_t* nvram, child_state_t* s,
+	nvram_data_t* nvram, child_state_t* s, void* handler_def,
 	const char* text, size_t text_len)
 {
 	return handle_object(token,
@@ -55,7 +66,7 @@ preset_read_result_t ansible_read_meta_section(jsmntok_t token,
 }
 
 preset_read_result_t ansible_match_firmware_name(jsmntok_t token,
-												 nvram_data_t* nvram, child_state_t* s,
+												 nvram_data_t* nvram, child_state_t* s, void* handler_def,
 												 const char* text, size_t text_len)
 {
 	if (token.type != JSMN_STRING) {
@@ -71,7 +82,7 @@ preset_read_result_t ansible_match_firmware_name(jsmntok_t token,
 }
 
 preset_read_result_t ansible_match_version(jsmntok_t token,
-										   nvram_data_t* nvram, child_state_t* s,
+										   nvram_data_t* nvram, child_state_t* s, void* handler_def,
 										   const char* text, size_t text_len)
 {
 	if (token.type != JSMN_STRING) {
@@ -86,25 +97,11 @@ preset_read_result_t ansible_match_version(jsmntok_t token,
 	return PRESET_READ_OK;
 }
 
-preset_read_result_t ansible_save_i2c_addr(jsmntok_t token,
-										   nvram_data_t* nvram, child_state_t* s,
-										   const char* text, size_t text_len)
-{
-	if (token.type != JSMN_PRIMITIVE) {
-		return PRESET_READ_MALFORMED;
-	}
-	if (token.end < 0) {
-		return PRESET_READ_INCOMPLETE;
-	}
-	nvram->state.i2c_addr = decode_decimal(text + token.start, token.end - token.start);
-	return PRESET_READ_OK;
-}
-
 ////////
 // shared
 
 preset_read_result_t ansible_read_shared_section(jsmntok_t token,
-												 nvram_data_t* nvram, child_state_t* s,
+												 nvram_data_t* nvram, child_state_t* s, void* handler_def,
 												 const char* text, size_t text_len)
 {
 	return handle_object(token,
@@ -114,7 +111,7 @@ preset_read_result_t ansible_read_shared_section(jsmntok_t token,
 }
 
 preset_read_result_t ansible_save_scales(jsmntok_t token,
-										 nvram_data_t* nvram, child_state_t* s,
+										 nvram_data_t* nvram, child_state_t* s, void* handler_def,
 										 const char* text, size_t text_len)
 {
 	preset_bufarray_state_t* state = (preset_bufarray_state_t*)s->state;

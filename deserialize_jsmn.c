@@ -81,7 +81,7 @@ preset_read_result_t handle_object(jsmntok_t tok,
 		return PRESET_READ_INCOMPLETE;
 	case MATCH_PARSE_SECTION:
 		switch(state->active_handler->read(tok,
-										   nvram, &state->active_handler->child_state,
+										   nvram, &state->active_handler->child_state, state->active_handler,
 										   text, text_len)) {
 		case PRESET_READ_INCOMPLETE:
 			return PRESET_READ_INCOMPLETE;
@@ -96,6 +96,35 @@ preset_read_result_t handle_object(jsmntok_t tok,
 	default:
 		return PRESET_READ_MALFORMED;
 	}
+}
+
+preset_read_result_t load_scalar(jsmntok_t tok,
+								 nvram_data_t* nvram, child_state_t* s, void* handler_def,
+								 const char* text, size_t text_len) {
+	preset_section_handler_t* handler = (preset_section_handler_t*)handler_def;
+	load_scalar_params_t* params = (load_scalar_params_t*)handler->params;
+	if (tok.type != JSMN_PRIMITIVE) {
+		return PRESET_READ_MALFORMED;
+	}
+	if (tok.end < 0) {
+		return PRESET_READ_INCOMPLETE;
+	}
+	void* dst = (char*)nvram + params->dst_offset;
+	int val = decode_decimal(text + tok.start, tok.end - tok.start);
+	switch (params->dst_size) {
+	case sizeof(uint8_t):
+		*(uint8_t*)dst = val;
+		break;
+	case sizeof(uint16_t):
+		*(uint16_t*)dst = val;
+		break;
+	case sizeof(uint32_t):
+		*(uint32_t*)dst = val;
+		break;
+	default:
+		return PRESET_READ_MALFORMED;
+	}
+	return PRESET_READ_OK;
 }
 
 preset_read_result_t preset_deserialize(FILE* fp, nvram_data_t* nvram,

@@ -8,12 +8,12 @@
 
 preset_section_handler_t ansible_sections[ANSIBLE_SECTION_CT];
 preset_section_handler_t ansible_shared_handlers[];
-
-void ansible_init_sections();
+preset_section_handler_t ansible_meta_handlers[];
+preset_section_handler_t ansible_tt_handlers[];
 
 preset_read_result_t ansible_read_meta_section(jsmntok_t token, 
-											   nvram_data_t* nvram, child_state_t* s,
+											   nvram_data_t* nvram, child_state_t* s, void* handler_def,
 											   const char* text, size_t text_len);
 preset_read_result_t ansible_read_shared_section(jsmntok_t token,
-												 nvram_data_t* nvram, child_state_t* s,
+												 nvram_data_t* nvram, child_state_t* s, void* handler_def,
 												 const char* text, size_t text_len);
