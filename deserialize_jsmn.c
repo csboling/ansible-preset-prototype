@@ -13,7 +13,7 @@ int decode_nybble(uint8_t* dst, char hex) {
 	if (hex < '0') {
 		return -1;
 	}
-	if (hex < '9') {
+	if (hex <= '9') {
 		*dst = hex - '0';
 		return 0;
 	}
@@ -26,7 +26,7 @@ int decode_nybble(uint8_t* dst, char hex) {
 	if (hex > 'F') {
 		return -1;
 	}
-	*dst = hex - 'A';
+	*dst = hex - 'A' + 0xA;
 	return 0;
 }
 
@@ -143,28 +143,29 @@ preset_read_result_t preset_deserialize(FILE* fp, nvram_data_t* nvram,
 				state.jsmn.toksuper -= state.tok_ct;
 			}
 			state.text_ct = fread(textbuf + keep_ct, 1, textbuf_len - keep_ct, fp);
-			if (state.text_ct <= 0) {
-				break;
+			if (state.text_ct < 0) {
+				return PRESET_READ_MALFORMED;
 			}
 			state.tok_ct = jsmn_parse(&state.jsmn,
 									  textbuf, textbuf_len,
 									  tokbuf, tokbuf_len);
-			switch (state.tok_ct) {
-			case JSMN_ERROR_NOMEM:
-				state.tok_ct = tokbuf_len;
-			case JSMN_ERROR_PART:
-				// need to find the last token that was set by the parser
-				// the rest are left over in the buffer from last time
-				for (state.tok_ct = 1; (size_t)state.tok_ct < tokbuf_len; state.tok_ct++) {
-					if (tokbuf[state.tok_ct - 1].end >= tokbuf[state.tok_ct].start) {
-						break;
-					}
-				}
-				break;
-			default:
-				return PRESET_READ_MALFORMED;
-			}
 			if (state.tok_ct < 0) {
+				switch (state.tok_ct) {
+				case JSMN_ERROR_NOMEM:
+					state.tok_ct = tokbuf_len;
+					break;
+				case JSMN_ERROR_PART:
+					// need to find the last token that was set by the parser
+					// the rest are left over in the buffer from last time
+					for (state.tok_ct = 1; (size_t)state.tok_ct < tokbuf_len; state.tok_ct++) {
+						if (tokbuf[state.tok_ct - 1].end >= tokbuf[state.tok_ct].start) {
+							break;
+						}
+					}
+					break;
+				default:
+					return PRESET_READ_MALFORMED;
+				}
 			}
 			state.curr_tok = 0;
 		}
@@ -183,8 +184,5 @@ preset_read_result_t preset_deserialize(FILE* fp, nvram_data_t* nvram,
 			return PRESET_READ_MALFORMED;
 		}
     }
-    if (state.text_ct < 0) {
-		return PRESET_READ_MALFORMED;
-	}
-	return PRESET_READ_OK;
+	return PRESET_READ_MALFORMED;
 }

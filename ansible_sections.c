@@ -136,12 +136,12 @@ preset_read_result_t ansible_save_scales(jsmntok_t token,
 		if (token.type != JSMN_STRING) {
 			return PRESET_READ_MALFORMED;
 		}
-		if (token.start > 0 && token.start % 2 != 0) {
-			// need to start on an even offset to read hex encoding
-			return PRESET_READ_INCOMPLETE;
-		}
 		size_t start = token.start > 0 ? token.start : 0;
 		size_t len = (token.end > 0 ? token.end : text_len) - start;
+		if (len % 2 != 0) {
+			// length needs to be even so we always decode full bytes
+			return PRESET_READ_INCOMPLETE;
+		}
 		if (decode_hexbuf((uint8_t*)&nvram->scale[state->array_ct] + state->buf_pos,
 						  text + start, len) < 0) {
 			return PRESET_READ_MALFORMED;

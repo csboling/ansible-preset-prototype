@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "deserialize_jsmn.h"
 
@@ -7,6 +7,7 @@
 #define ANSIBLE_VERSION "1.6.1-dev"
 
 preset_section_handler_t ansible_sections[ANSIBLE_SECTION_CT];
+preset_section_handler_t ansible_shared_handlers[];
 
 void ansible_init_sections();
 
