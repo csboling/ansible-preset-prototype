@@ -13,7 +13,7 @@ preset_section_handler_t ansible_tt_handlers[];
 
 preset_read_result_t ansible_read_meta_section(jsmntok_t token, 
 											   nvram_data_t* nvram, child_state_t* s, void* handler_def,
-											   const char* text, size_t text_len);
+											   const char* text, size_t text_len, size_t dst_offset);
 preset_read_result_t ansible_read_shared_section(jsmntok_t token,
 												 nvram_data_t* nvram, child_state_t* s, void* handler_def,
-												 const char* text, size_t text_len);
+												 const char* text, size_t text_len, size_t dst_offset);

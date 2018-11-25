@@ -33,12 +33,12 @@ typedef struct {
 
 typedef preset_read_result_t(*preset_reader_cb)(jsmntok_t token,
 	nvram_data_t* nvram, child_state_t* s, void* handler_def,
-	const char* text, size_t text_len);
+	const char* text, size_t text_len, size_t dst_offset);
 typedef void(*preset_writer_cb)();
 
 typedef struct
 {
-	char name[16];
+	char* name;
 	preset_reader_cb read;
 	preset_writer_cb write;
 	child_state_t child_state;
@@ -63,16 +63,15 @@ typedef struct {
 } preset_object_state_t;
 
 typedef enum {
-	ARRAY_MATCH_KEY,
 	ARRAY_MATCH_START,
 	ARRAY_MATCH_ITEMS,
 } array_state_t;
 
-typedef struct {
-	array_state_t array_state;
-	size_t buf_pos;
-	uint8_t array_ct;
-} preset_bufarray_state_t;
+//typedef struct {
+//	array_state_t array_state;
+//	size_t buf_pos;
+//	uint8_t array_ct;
+//} preset_bufarray_state_t;
 
 int decode_decimal(const char* s, int len);
 int decode_hexbuf(char* dst, const char* src, size_t len);
@@ -82,13 +81,37 @@ preset_read_result_t handle_object(jsmntok_t tok,
 								   const char* text, size_t text_len,
 								   preset_section_handler_t* handlers, uint8_t handler_ct);
 
+preset_read_result_t load_array(jsmntok_t tok,
+	nvram_data_t* nvram, child_state_t* s, void* handler_def,
+	const char* text, size_t text_len, size_t dst_offset);
+typedef struct {
+	size_t array_len;
+	size_t item_size;
+	preset_section_handler_t* item_handler;
+} load_array_params_t;
+typedef struct {
+	array_state_t array_state;
+	size_t array_ct;
+} load_array_state_t;
+
 preset_read_result_t load_scalar(jsmntok_t tok,
 	nvram_data_t* nvram, child_state_t* s, void* handler_def,
-	const char* text, size_t text_len);
+	const char* text, size_t text_len, size_t dst_offset);
 typedef struct {
 	size_t dst_offset;
 	uint8_t dst_size;
 } load_scalar_params_t;
+
+preset_read_result_t load_buffer(jsmntok_t tok,
+	nvram_data_t* nvram, child_state_t* s, void* handler_def,
+	const char* text, size_t text_len, size_t dst_offset);
+typedef struct {
+	size_t buf_len;
+	size_t dst_offset;
+} load_buffer_params_t;
+typedef struct {
+	size_t buf_pos;
+} load_buffer_state_t;
 
 preset_read_result_t preset_deserialize(FILE* fp, nvram_data_t* nvram,
 										preset_object_state_t* object_state,

@@ -2,7 +2,8 @@
 #include "ansible_preset_internal.h"
 
 preset_object_state_t ansible_read_object_state;
-preset_bufarray_state_t ansible_bufarray_state;
+load_buffer_state_t ansible_load_buffer_state;
+load_array_state_t ansible_load_array_state;
 preset_section_handler_t ansible_sections[ANSIBLE_SECTION_CT] = {
 	{
 		.name = "meta",
@@ -40,10 +41,24 @@ preset_section_handler_t ansible_meta_handlers[] = {
 preset_section_handler_t ansible_shared_handlers[] = {
 	{
 		.name = "scales",
-		.read = ansible_save_scales,
+		.read = load_array,
 		.child_state = {
-			.state = &ansible_bufarray_state,
+			.state = &ansible_load_array_state,
 		},
+		.params = &((load_array_params_t) {
+			.array_len = 16,
+			.item_size = sizeof(uint8_t[8]),
+			.item_handler = &((preset_section_handler_t) {
+				.read = load_buffer,
+				.child_state = {
+					.state = &ansible_load_buffer_state,
+				},
+				.params = &((load_buffer_params_t) {
+					.buf_len = 8,
+					.dst_offset = offsetof(nvram_data_t, scale),
+				}),
+			})
+		})
 	},
 };
 preset_section_handler_t ansible_tt_handlers[] = {
@@ -57,7 +72,7 @@ preset_section_handler_t ansible_tt_handlers[] = {
 
 preset_read_result_t ansible_read_meta_section(jsmntok_t token,
 	nvram_data_t* nvram, child_state_t* s, void* handler_def,
-	const char* text, size_t text_len)
+	const char* text, size_t text_len, size_t dst_offset)
 {
 	return handle_object(token,
 		nvram, s,
@@ -67,7 +82,7 @@ preset_read_result_t ansible_read_meta_section(jsmntok_t token,
 
 preset_read_result_t ansible_match_firmware_name(jsmntok_t token,
 												 nvram_data_t* nvram, child_state_t* s, void* handler_def,
-												 const char* text, size_t text_len)
+												 const char* text, size_t text_len, size_t dst_offset)
 {
 	if (token.type != JSMN_STRING) {
 		return PRESET_READ_MALFORMED;
@@ -83,7 +98,7 @@ preset_read_result_t ansible_match_firmware_name(jsmntok_t token,
 
 preset_read_result_t ansible_match_version(jsmntok_t token,
 										   nvram_data_t* nvram, child_state_t* s, void* handler_def,
-										   const char* text, size_t text_len)
+										   const char* text, size_t text_len, size_t dst_offset)
 {
 	if (token.type != JSMN_STRING) {
 		return PRESET_READ_MALFORMED;
@@ -102,60 +117,12 @@ preset_read_result_t ansible_match_version(jsmntok_t token,
 
 preset_read_result_t ansible_read_shared_section(jsmntok_t token,
 												 nvram_data_t* nvram, child_state_t* s, void* handler_def,
-												 const char* text, size_t text_len)
+												 const char* text, size_t text_len, size_t dst_offset)
 {
 	return handle_object(token,
 		nvram, s,
 		text, text_len,
 		ansible_shared_handlers, sizeof(ansible_shared_handlers) / sizeof(preset_section_handler_t));
-}
-
-preset_read_result_t ansible_save_scales(jsmntok_t token,
-										 nvram_data_t* nvram, child_state_t* s, void* handler_def,
-										 const char* text, size_t text_len)
-{
-	preset_bufarray_state_t* state = (preset_bufarray_state_t*)s->state;
-	if (s->fresh) {
-		s->fresh = false;
-		state->array_state = ARRAY_MATCH_START;
-		state->array_ct = 0;
-		state->buf_pos = 0;
-	}
-
-	switch (state->array_state) {
-	case ARRAY_MATCH_START:
-		if (token.type != JSMN_ARRAY) {
-			return PRESET_READ_MALFORMED;
-		}
-		state->array_state = ARRAY_MATCH_ITEMS;
-		return PRESET_READ_INCOMPLETE;
-	case ARRAY_MATCH_ITEMS:
-		if (token.type != JSMN_STRING) {
-			return PRESET_READ_MALFORMED;
-		}
-		size_t start = token.start > 0 ? token.start : 0;
-		size_t len = (token.end > 0 ? token.end : text_len) - start;
-		if (len % 2 != 0) {
-			// length needs to be even so we always decode full bytes
-			return PRESET_READ_INCOMPLETE;
-		}
-		if (decode_hexbuf((uint8_t*)&nvram->scale[state->array_ct] + state->buf_pos,
-						  text + start, len) < 0) {
-			return PRESET_READ_MALFORMED;
-		}
-		if (token.end > 0) {
-			state->buf_pos = 0;
-			if (++state->array_ct < 16) {
-				return PRESET_READ_INCOMPLETE;
-			}
-			s->fresh = true;
-			return PRESET_READ_OK;
-		}
-		state->buf_pos += len;
-		return PRESET_READ_INCOMPLETE;
-	default:
-		return PRESET_READ_MALFORMED;
-	}
 }
 
 ////////

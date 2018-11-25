@@ -82,7 +82,7 @@ preset_read_result_t handle_object(jsmntok_t tok,
 	case MATCH_PARSE_SECTION:
 		switch(state->active_handler->read(tok,
 										   nvram, &state->active_handler->child_state, state->active_handler,
-										   text, text_len)) {
+										   text, text_len, 0)) {
 		case PRESET_READ_INCOMPLETE:
 			return PRESET_READ_INCOMPLETE;
 		case PRESET_READ_OK:
@@ -100,7 +100,7 @@ preset_read_result_t handle_object(jsmntok_t tok,
 
 preset_read_result_t load_scalar(jsmntok_t tok,
 								 nvram_data_t* nvram, child_state_t* s, void* handler_def,
-								 const char* text, size_t text_len) {
+								 const char* text, size_t text_len, size_t dst_offset) {
 	preset_section_handler_t* handler = (preset_section_handler_t*)handler_def;
 	load_scalar_params_t* params = (load_scalar_params_t*)handler->params;
 	if (tok.type != JSMN_PRIMITIVE) {
@@ -109,7 +109,7 @@ preset_read_result_t load_scalar(jsmntok_t tok,
 	if (tok.end < 0) {
 		return PRESET_READ_INCOMPLETE;
 	}
-	void* dst = (char*)nvram + params->dst_offset;
+	void* dst = (char*)nvram + params->dst_offset + dst_offset;
 	int val = decode_decimal(text + tok.start, tok.end - tok.start);
 	switch (params->dst_size) {
 	case sizeof(uint8_t):
@@ -125,6 +125,84 @@ preset_read_result_t load_scalar(jsmntok_t tok,
 		return PRESET_READ_MALFORMED;
 	}
 	return PRESET_READ_OK;
+}
+
+preset_read_result_t load_array(jsmntok_t tok,
+								nvram_data_t* nvram, child_state_t* s, void* handler_def,
+								const char* text, size_t text_len, size_t dst_offset) {
+	preset_section_handler_t* handler = (preset_section_handler_t*)handler_def;
+	load_array_params_t* params = (load_array_params_t*)handler->params;
+	load_array_state_t* state = (load_array_state_t*)s->state;
+	if (s->fresh) {
+		s->fresh = false;
+		state->array_state = ARRAY_MATCH_START;
+		state->array_ct = 0;
+	}
+
+	switch (state->array_state) {
+	case ARRAY_MATCH_START:
+		if (tok.type != JSMN_ARRAY) {
+			return PRESET_READ_MALFORMED;
+		}
+		state->array_state = ARRAY_MATCH_ITEMS;
+		return PRESET_READ_INCOMPLETE;
+	case ARRAY_MATCH_ITEMS:
+		switch (params->item_handler->read(tok,
+			nvram, &params->item_handler->child_state, params->item_handler,
+			text, text_len, dst_offset + state->array_ct * params->item_size))
+		{
+		case PRESET_READ_MALFORMED:
+			return PRESET_READ_MALFORMED;
+		case PRESET_READ_INCOMPLETE:
+			return PRESET_READ_INCOMPLETE;
+		case PRESET_READ_OK:
+			if (++state->array_ct < params->array_len) {
+				return PRESET_READ_INCOMPLETE;
+			}
+			s->fresh = true;
+			return PRESET_READ_OK;
+		default:
+			return PRESET_READ_MALFORMED;
+		}
+	default:
+		return PRESET_READ_MALFORMED;
+	}
+}
+
+preset_read_result_t load_buffer(jsmntok_t tok,
+								 nvram_data_t* nvram, child_state_t* s, void* handler_def,
+								 const char* text, size_t text_len, size_t dst_offset) {
+	preset_section_handler_t* handler = (preset_section_handler_t*)handler_def;
+	load_buffer_params_t* params = (load_buffer_params_t*)handler->params;
+	load_buffer_state_t* state = (load_buffer_state_t*)s->state;
+	if (s->fresh) {
+		s->fresh = false;
+		state->buf_pos = 0;
+	}
+	if (tok.type != JSMN_STRING) {
+		return PRESET_READ_MALFORMED;
+	}
+	size_t start = tok.start > 0 ? tok.start : 0;
+	size_t len = (tok.end > 0 ? tok.end : text_len) - start;
+	if (len % 2 != 0) {
+		// length needs to be even so we always decode full bytes
+		return PRESET_READ_INCOMPLETE;
+	}
+	if (state->buf_pos + len != params->buf_len * 2) {
+		return PRESET_READ_MALFORMED;
+	}
+	uint8_t* dst = (uint8_t*)nvram + params->dst_offset + dst_offset;
+	if (decode_hexbuf(dst + state->buf_pos,
+		text + start, len) < 0) {
+		return PRESET_READ_MALFORMED;
+	}
+	if (tok.end > 0) {
+		state->buf_pos = 0;
+		s->fresh = true;
+		return PRESET_READ_OK;
+	}
+	state->buf_pos += len;
+	return PRESET_READ_INCOMPLETE;
 }
 
 preset_read_result_t preset_deserialize(FILE* fp, nvram_data_t* nvram,
