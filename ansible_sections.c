@@ -138,6 +138,126 @@ preset_section_handler_t ansible_app_handlers[ANSIBLE_APP_COUNT] = {
 	},
 
 	{
+		.name = "midi_arp",
+		.read = load_object,
+		.fresh = true,
+		.state = &ansible_app_object_state[0],
+		.params = &((load_object_params_t) {
+			.handler_ct = 4,
+			.handlers = ((preset_section_handler_t[]) {
+				{
+					.name = "clock_period",
+					.read = load_scalar,
+					.params = &((load_scalar_params_t) {
+						.dst_offset = offsetof(nvram_data_t, midi_arp_state.clock_period),
+						.dst_size = sizeof_field(nvram_data_t, midi_arp_state.clock_period),
+					}),
+				},
+				{
+					.name = "style",
+					.read = load_scalar,
+					.params = &((load_scalar_params_t) {
+						.dst_offset = offsetof(nvram_data_t, midi_arp_state.style),
+						.dst_size = sizeof_field(nvram_data_t, midi_arp_state.style),
+					}),
+				},
+				{
+					.name = "hold",
+					.read = load_scalar,
+					.params = &((load_scalar_params_t) {
+						.dst_offset = offsetof(nvram_data_t, midi_arp_state.hold),
+						.dst_size = sizeof_field(nvram_data_t, midi_arp_state.hold),
+					}),
+				},
+				{
+					.name = "players",
+					.read = load_array,
+					.fresh = true,
+					.state = &ansible_load_array_state,
+					.params = &((load_array_params_t) {
+						.array_len = sizeof_field(nvram_data_t, midi_arp_state.p) / sizeof_field(nvram_data_t, midi_arp_state.p[0]),
+						.item_size = sizeof_field(nvram_data_t, midi_arp_state.p[0]),
+						.item_handler = &((preset_section_handler_t) {
+							.read = load_object,
+							.fresh = true,
+							.state = &ansible_app_object_state[1],
+							.params = &((load_object_params_t) {
+								.handler_ct = 8,
+								.handlers = (preset_section_handler_t[]) {
+									{
+										.name = "fill",
+										.read = load_scalar,
+										.params = &((load_scalar_params_t) {
+											.dst_offset = offsetof(nvram_data_t, midi_arp_state.p[0].fill),
+											.dst_size = sizeof_field(nvram_data_t, midi_arp_state.p[0].fill),
+										}),
+									},
+									{
+										.name = "division",
+										.read = load_scalar,
+										.params = &((load_scalar_params_t) {
+											.dst_offset = offsetof(nvram_data_t, midi_arp_state.p[0].division),
+											.dst_size = sizeof_field(nvram_data_t, midi_arp_state.p[0].division),
+										}),
+									},
+									{
+										.name = "rotation",
+										.read = load_scalar,
+										.params = &((load_scalar_params_t) {
+											.dst_offset = offsetof(nvram_data_t, midi_arp_state.p[0].rotation),
+											.dst_size = sizeof_field(nvram_data_t, midi_arp_state.p[0].rotation),
+										}),
+									},
+									{
+										.name = "gate",
+										.read = load_scalar,
+										.params = &((load_scalar_params_t) {
+											.dst_offset = offsetof(nvram_data_t, midi_arp_state.p[0].gate),
+											.dst_size = sizeof_field(nvram_data_t, midi_arp_state.p[0].gate),
+										}),
+									},
+									{
+										.name = "steps",
+										.read = load_scalar,
+										.params = &((load_scalar_params_t) {
+											.dst_offset = offsetof(nvram_data_t, midi_arp_state.p[0].steps),
+											.dst_size = sizeof_field(nvram_data_t, midi_arp_state.p[0].steps),
+										}),
+									},
+									{
+										.name = "offset",
+										.read = load_scalar,
+										.params = &((load_scalar_params_t) {
+											.dst_offset = offsetof(nvram_data_t, midi_arp_state.p[0].offset),
+											.dst_size = sizeof_field(nvram_data_t, midi_arp_state.p[0].offset),
+										}),
+									},
+									{
+										.name = "slew",
+										.read = load_scalar,
+										.params = &((load_scalar_params_t) {
+											.dst_offset = offsetof(nvram_data_t, midi_arp_state.p[0].slew),
+											.dst_size = sizeof_field(nvram_data_t, midi_arp_state.p[0].slew),
+										}),
+									},
+									{
+										.name = "shift",
+										.read = load_scalar,
+										.params = &((load_scalar_params_t) {
+											.dst_offset = offsetof(nvram_data_t, midi_arp_state.p[0].shift),
+											.dst_size = sizeof_field(nvram_data_t, midi_arp_state.p[0].shift),
+										}),
+									},
+								},
+							}),
+						}),
+					}),
+				},
+			}),
+		}),
+	},
+
+	{
 		.name = "tt",
 		.read = load_object,
 		.fresh = true,

@@ -148,6 +148,72 @@ TEST midi_standard_read_ok() {
 	PASS();
 }
 
+TEST midi_arp_read_ok() {
+	const char midi_arp[] = "{"
+		"\"clock_period\": 12345678,"
+		"\"style\": 210,"
+		"\"hold\": true,"
+		"\"players\": ["
+			"{"
+				"\"fill\": 0,"
+				"\"division\": 1,"
+				"\"rotation\": 2,"
+				"\"gate\": 3,"
+				"\"steps\": 4,"
+				"\"offset\": 5,"
+				"\"slew\": -5,"
+				"\"shift\": 10"
+			"},"
+			"{"
+				"\"fill\": 1,"
+				"\"division\": 1,"
+				"\"rotation\": 2,"
+				"\"gate\": 3,"
+				"\"steps\": 4,"
+				"\"offset\": 5,"
+				"\"slew\": -5,"
+				"\"shift\": 10"
+			"},"
+			"{"
+				"\"fill\": 2,"
+				"\"division\": 1,"
+				"\"rotation\": 2,"
+				"\"gate\": 3,"
+				"\"steps\": 4,"
+				"\"offset\": 5,"
+				"\"slew\": -5,"
+				"\"shift\": 10"
+			"},"
+			"{"
+				"\"fill\": 3,"
+				"\"division\": 1,"
+				"\"rotation\": 2,"
+				"\"gate\": 3,"
+				"\"steps\": 4,"
+				"\"offset\": 5,"
+				"\"slew\": -5,"
+				"\"shift\": 10"
+			"},"
+		"]"
+	"}";
+	FILE* fp = write_temp_file(midi_arp, sizeof(midi_arp));
+	preset_section_handler_t* handler = find_app_handler("midi_arp");
+
+	preset_read_result_t result = preset_deserialize(fp,
+		&nvram, handler,
+		buf, sizeof(buf),
+		tokens, sizeof(tokens) / sizeof(jsmntok_t));
+	fclose(fp);
+
+	ASSERT_EQ(result, PRESET_READ_OK);
+	ASSERT_EQ(true, nvram.midi_arp_state.hold);
+	for (int i = 0; i < 4; i++) {
+		ASSERT_EQ(i, nvram.midi_arp_state.p[i].fill);
+		ASSERT_EQ(-5, nvram.midi_arp_state.p[i].slew);
+	}
+	PASS();
+}
+
 TEST tt_read_ok() {
 	const char tt[] = "{"
 		"\"clock_period\": 12345678,"
@@ -177,5 +243,6 @@ SUITE(happy_path_suite) {
 	RUN_TEST(shared_read_ok);
 
 	RUN_TEST(midi_standard_read_ok);
+	RUN_TEST(midi_arp_read_ok);
 	RUN_TEST(tt_read_ok);
 }

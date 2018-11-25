@@ -2,6 +2,13 @@
 
 int decode_decimal(const char* s, int len) {
 	int ret = 0;
+	// also handle bool
+	if (s[0] == 't') {
+		return 1;
+	}
+	if (s[0] == 'f') {
+		return 0;
+	}
 	bool negative = s[0] == '-';
 	for (int i = negative ? 1 : 0; i < len; i++) {
 		ret = ret * 10 + (s[i] - '0');
