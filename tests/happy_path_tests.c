@@ -1,4 +1,12 @@
-﻿#include "happy_path_tests.h"
+﻿// for htons and friends
+#ifdef _WIN32
+#include <WinSock2.h>
+#pragma comment(lib, "Ws2_32.lib")
+#else
+#include <arpa/inet.h>
+#endif
+
+#include "happy_path_tests.h"
 
 #include "greatest/greatest.h"
 
@@ -110,6 +118,36 @@ TEST shared_read_ok() {
 	PASS();
 }
 
+TEST midi_standard_read_ok() {
+	const char midi_standard[] = "{"
+		"\"clock_period\": 12345678,"
+		"\"voicing\": 123,"
+		"\"fixed\": {"
+			"\"notes\": \"00112233\","
+			"\"cc\": \"44556677\""
+		"},"
+		"\"shift\": -12345,"
+		"\"slew\": 12345"
+	"}";
+	FILE* fp = write_temp_file(midi_standard, sizeof(midi_standard));
+	preset_section_handler_t* handler = find_app_handler("midi_standard");
+
+	preset_read_result_t result = preset_deserialize(fp,
+		&nvram, handler,
+		buf, sizeof(buf),
+		tokens, sizeof(tokens) / sizeof(jsmntok_t));
+	fclose(fp);
+
+	ASSERT_EQ(result, PRESET_READ_OK);
+	ASSERT_EQ(12345678, nvram.midi_standard_state.clock_period);
+	ASSERT_EQ(123, nvram.midi_standard_state.voicing);
+	ASSERT_EQ(0x33, nvram.midi_standard_state.fixed.notes[3]);
+	ASSERT_EQ(0x55, nvram.midi_standard_state.fixed.cc[1]);
+	ASSERT_EQ(-12345, nvram.midi_standard_state.shift);
+	ASSERT_EQ(12345, nvram.midi_standard_state.slew);
+	PASS();
+}
+
 TEST tt_read_ok() {
 	const char tt[] = "{"
 		"\"clock_period\": 12345678,"
@@ -127,11 +165,17 @@ TEST tt_read_ok() {
 
 	ASSERT_EQ(result, PRESET_READ_OK);
 	ASSERT_EQ(12345678, nvram.tt_state.clock_period);
+	ASSERT_EQ(htons(0x0011), nvram.tt_state.tr_time[0]);
+	ASSERT_EQ(htons(0x4455), nvram.tt_state.tr_time[2]);
+	ASSERT_EQ(htons(0xAABB), nvram.tt_state.cv_slew[1]);
+	ASSERT_EQ(htons(0xEEFF), nvram.tt_state.cv_slew[3]);
 	PASS();
 }
 
 SUITE(happy_path_suite) {
 	RUN_TEST(meta_read_ok);
 	RUN_TEST(shared_read_ok);
+
+	RUN_TEST(midi_standard_read_ok);
 	RUN_TEST(tt_read_ok);
 }

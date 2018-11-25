@@ -1,8 +1,10 @@
 ﻿#include "ansible_sections.h"
 
+#define sizeof_field(s, m) (sizeof((((s*)0)->m)))
+
 load_object_state_t ansible_root_object_state;
 load_object_state_t ansible_section_object_state;
-load_object_state_t ansible_app_object_state;
+load_object_state_t ansible_app_object_state[2];
 load_buffer_state_t ansible_load_buffer_state;
 load_array_state_t ansible_load_array_state;
 
@@ -29,7 +31,7 @@ preset_section_handler_t ansible_meta_handlers[] = {
 		.read = load_scalar,
 		.params = &((load_scalar_params_t){
 			.dst_offset = offsetof(nvram_data_t, state.i2c_addr),
-			.dst_size = sizeof(uint8_t),
+			.dst_size = sizeof_field(nvram_data_t, state.i2c_addr),
 		}),
 	},
 };
@@ -41,14 +43,14 @@ preset_section_handler_t ansible_shared_handlers[] = {
 		.fresh = true,
 		.state = &ansible_load_array_state,
 		.params = &((load_array_params_t) {
-			.array_len = 16,
-			.item_size = sizeof(uint8_t[8]),
+			.array_len = sizeof_field(nvram_data_t, scale) / sizeof_field(nvram_data_t, scale[0]),
+			.item_size = sizeof_field(nvram_data_t, scale[0]),
 			.item_handler = &((preset_section_handler_t) {
 				.read = load_buffer,
 				.fresh = true,
 				.state = &ansible_load_buffer_state,
 				.params = &((load_buffer_params_t) {
-					.buf_len = 8,
+					.buf_len = sizeof_field(nvram_data_t, scale[0]),
 					.dst_offset = offsetof(nvram_data_t, scale),
 				}),
 			})
@@ -61,10 +63,85 @@ preset_section_handler_t ansible_shared_handlers[] = {
 
 preset_section_handler_t ansible_app_handlers[ANSIBLE_APP_COUNT] = {
 	{
+		.name = "midi_standard",
+		.read = load_object,
+		.fresh = true,
+		.state = &ansible_app_object_state[0],
+		.params = &((load_object_params_t) {
+			.handler_ct = 5,
+			.handlers = ((preset_section_handler_t[]) {
+				{
+					.name = "clock_period",
+					.read = load_scalar,
+					.params = &((load_scalar_params_t) {
+						.dst_offset = offsetof(nvram_data_t, midi_standard_state.clock_period),
+						.dst_size = sizeof_field(nvram_data_t, midi_standard_state.clock_period),
+					}),
+				},
+				{
+					.name = "voicing",
+					.read = load_scalar,
+					.params = &((load_scalar_params_t) {
+						.dst_offset = offsetof(nvram_data_t, midi_standard_state.voicing),
+						.dst_size = sizeof_field(nvram_data_t, midi_standard_state.voicing),
+					}),
+				},
+				{
+					.name = "fixed",
+					.read = load_object,
+					.fresh = true,
+					.state = &ansible_app_object_state[1],
+					.params = &((load_object_params_t) {
+						.handler_ct = 2,
+						.handlers = ((preset_section_handler_t[]) {
+							{
+								.name = "notes",
+								.read = load_buffer,
+								.fresh = true,
+								.state = &ansible_load_buffer_state,
+								.params = &((load_buffer_params_t) {
+									.buf_len = sizeof_field(nvram_data_t, midi_standard_state.fixed.notes),
+									.dst_offset = offsetof(nvram_data_t, midi_standard_state.fixed.notes),
+								}),
+							},
+							{
+								.name = "cc",
+								.read = load_buffer,
+								.fresh = true,
+								.state = &ansible_load_buffer_state,
+								.params = &((load_buffer_params_t) {
+									.buf_len = sizeof_field(nvram_data_t, midi_standard_state.fixed.cc),
+									.dst_offset = offsetof(nvram_data_t, midi_standard_state.fixed.cc),
+								}),
+							},
+						}),
+					}),
+				},
+				{
+					.name = "shift",
+					.read = load_scalar,
+					.params = &((load_scalar_params_t) {
+						.dst_offset = offsetof(nvram_data_t, midi_standard_state.shift),
+						.dst_size = sizeof_field(nvram_data_t, midi_standard_state.shift),
+					}),
+				},
+				{
+					.name = "slew",
+					.read = load_scalar,
+					.params = &((load_scalar_params_t) {
+						.dst_offset = offsetof(nvram_data_t, midi_standard_state.slew),
+						.dst_size = sizeof_field(nvram_data_t, midi_standard_state.slew),
+					}),
+				},
+			}),
+		}),
+	},
+
+	{
 		.name = "tt",
 		.read = load_object,
 		.fresh = true,
-		.state = &ansible_app_object_state,
+		.state = &ansible_app_object_state[0],
 		.params = &((load_object_params_t) {
 			.handler_ct = 3,
 			.handlers = ((preset_section_handler_t[]) {
@@ -73,7 +150,7 @@ preset_section_handler_t ansible_app_handlers[ANSIBLE_APP_COUNT] = {
 					.read = load_scalar,
 					.params = &((load_scalar_params_t) {
 						.dst_offset = offsetof(nvram_data_t, tt_state.clock_period),
-						.dst_size = sizeof(uint32_t),
+						.dst_size = sizeof_field(nvram_data_t, tt_state.clock_period),
 					}),
 				},
 				{
@@ -82,7 +159,7 @@ preset_section_handler_t ansible_app_handlers[ANSIBLE_APP_COUNT] = {
 					.fresh = true,
 					.state = &ansible_load_buffer_state,
 					.params = &((load_buffer_params_t) {
-						.buf_len = 4 * sizeof(uint16_t),
+						.buf_len = sizeof_field(nvram_data_t, tt_state.tr_time),
 						.dst_offset = offsetof(nvram_data_t, tt_state.tr_time),
 					}),
 				},
@@ -92,7 +169,7 @@ preset_section_handler_t ansible_app_handlers[ANSIBLE_APP_COUNT] = {
 					.fresh = true,
 					.state = &ansible_load_buffer_state,
 					.params = &((load_buffer_params_t) {
-						.buf_len = 4 * sizeof(uint16_t),
+						.buf_len = sizeof_field(nvram_data_t, tt_state.cv_slew),
 						.dst_offset = offsetof(nvram_data_t, tt_state.cv_slew),
 					}),
 				},
