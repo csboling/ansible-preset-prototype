@@ -26,7 +26,6 @@
     <ClCompile Include="main.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\ansible_preset_internal.h" />
     <ClInclude Include="..\ansible_sections.h" />
     <ClInclude Include="..\deserialize_jsmn.h" />
     <ClInclude Include="..\jsmn\jsmn.h" />

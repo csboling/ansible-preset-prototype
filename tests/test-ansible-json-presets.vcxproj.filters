@@ -50,9 +50,6 @@
     <ClInclude Include="..\ansible_sections.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\ansible_preset_internal.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\jsmn\jsmn.h">
       <Filter>Header Files</Filter>
     </ClInclude>
