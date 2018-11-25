@@ -10,18 +10,30 @@ jsmntok_t tokens[8];
 nvram_data_t nvram;
 load_object_state_t object_state;
 
+preset_section_handler_t* find_app_handler(char* name) {
+	for (int i = 0; i < ANSIBLE_APP_COUNT; i++) {
+		if (strcmp(ansible_app_handlers[i].name, name) == 0) {
+			return &ansible_app_handlers[i];
+		}
+	}
+	return NULL;
+}
+
+FILE* write_temp_file(const char* text, size_t len) {
+	FILE* fp = fopen("data.tmp", "w");
+	fwrite(text, 1, len, fp);
+	fclose(fp);
+	return fopen("data.tmp", "r");
+}
+
 TEST meta_read_ok() {
 	const char meta[] = "{"
 		"\"firmware\": \"" ANSIBLE_FIRMWARE_NAME "\","
 		"\"version\": \"" ANSIBLE_VERSION "\","
 		"\"i2c_addr\": 160"
 	"}";
+	FILE* fp = write_temp_file(meta, sizeof(meta));
 
-	FILE* fp = fopen("data.tmp", "w");
-	fwrite(meta, 1, sizeof(meta), fp);
-	fclose(fp);
-
-	fp = fopen("data.tmp", "r");
 	preset_read_result_t result = preset_deserialize(fp,
 		&nvram, &((preset_section_handler_t) {
 			.read = load_object,
@@ -62,12 +74,8 @@ TEST shared_read_ok() {
 			"\"f000000000000000\","
 		"]"
 	"}";
+	FILE* fp = write_temp_file(shared, sizeof(shared));
 
-	FILE* fp = fopen("data.tmp", "w");
-	fwrite(shared, 1, sizeof(shared), fp);
-	fclose(fp);
-
-	fp = fopen("data.tmp", "r");
 	preset_read_result_t result = preset_deserialize(fp,
 		&nvram, &((preset_section_handler_t) {
 			.read = load_object,
@@ -102,31 +110,28 @@ TEST shared_read_ok() {
 	PASS();
 }
 
-//TEST tt_read_ok() {
-//	const char tt[] = "{"
-//		"\"clock_period\": 12345678,"
-//		"\"tr_time\": \"0011223344556677\","
-//		"\"cv_slew\": \"8899aabbccddeeff\""
-//	"}";
-//
-//	FILE* fp = fopen("data.tmp", "w");
-//	fwrite(tt, 1, sizeof(tt), fp);
-//	fclose(fp);
-//
-//	fp = fopen("data.tmp", "r");
-//	preset_read_result_t result = preset_deserialize(fp,
-//		&nvram, &object_state,
-//		ansible_tt_handlers, 3,
-//		buf, sizeof(buf),
-//		tokens, sizeof(tokens) / sizeof(jsmntok_t));
-//	fclose(fp);
-//
-//	ASSERT_EQ(result, PRESET_READ_OK);
-//	ASSERT_EQ(12345678, nvram.tt_state.clock_period);
-//}
+TEST tt_read_ok() {
+	const char tt[] = "{"
+		"\"clock_period\": 12345678,"
+		"\"tr_time\": \"0011223344556677\","
+		"\"cv_slew\": \"8899aabbccddeeff\""
+	"}";
+	FILE* fp = write_temp_file(tt, sizeof(tt));
+	preset_section_handler_t* handler = find_app_handler("tt");
+
+	preset_read_result_t result = preset_deserialize(fp,
+		&nvram, handler,
+		buf, sizeof(buf),
+		tokens, sizeof(tokens) / sizeof(jsmntok_t));
+	fclose(fp);
+
+	ASSERT_EQ(result, PRESET_READ_OK);
+	ASSERT_EQ(12345678, nvram.tt_state.clock_period);
+	PASS();
+}
 
 SUITE(happy_path_suite) {
 	RUN_TEST(meta_read_ok);
 	RUN_TEST(shared_read_ok);
-	//RUN_TEST(tt_read_ok);
+	RUN_TEST(tt_read_ok);
 }

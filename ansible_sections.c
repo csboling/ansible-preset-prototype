@@ -2,6 +2,7 @@
 
 load_object_state_t ansible_root_object_state;
 load_object_state_t ansible_section_object_state;
+load_object_state_t ansible_app_object_state;
 load_buffer_state_t ansible_load_buffer_state;
 load_array_state_t ansible_load_array_state;
 
@@ -58,9 +59,45 @@ preset_section_handler_t ansible_shared_handlers[] = {
 /////////
 // apps
 
-preset_section_handler_t ansible_tt_handlers[] = {
+preset_section_handler_t ansible_app_handlers[ANSIBLE_APP_COUNT] = {
 	{
-		.name = "clock_period",
+		.name = "tt",
+		.read = load_object,
+		.fresh = true,
+		.state = &ansible_app_object_state,
+		.params = &((load_object_params_t) {
+			.handler_ct = 3,
+			.handlers = ((preset_section_handler_t[]) {
+				{
+					.name = "clock_period",
+					.read = load_scalar,
+					.params = &((load_scalar_params_t) {
+						.dst_offset = offsetof(nvram_data_t, tt_state.clock_period),
+						.dst_size = sizeof(uint32_t),
+					}),
+				},
+				{
+					.name = "tr_time",
+					.read = load_buffer,
+					.fresh = true,
+					.state = &ansible_load_buffer_state,
+					.params = &((load_buffer_params_t) {
+						.buf_len = 4 * sizeof(uint16_t),
+						.dst_offset = offsetof(nvram_data_t, tt_state.tr_time),
+					}),
+				},
+				{
+					.name = "cv_slew",
+					.read = load_buffer,
+					.fresh = true,
+					.state = &ansible_load_buffer_state,
+					.params = &((load_buffer_params_t) {
+						.buf_len = 4 * sizeof(uint16_t),
+						.dst_offset = offsetof(nvram_data_t, tt_state.cv_slew),
+					}),
+				},
+			}),
+		}),
 	},
 };
 
@@ -72,7 +109,7 @@ preset_section_handler_t ansible_handler = {
 	.fresh = true,
 	.state = &ansible_root_object_state,
 	.params = &((load_object_params_t) {
-		.handler_ct = 2,
+		.handler_ct = 3,
 		.handlers = ((preset_section_handler_t[]) {
 			{
 				.name = "meta",
@@ -92,6 +129,16 @@ preset_section_handler_t ansible_handler = {
 				.params = &((load_object_params_t) {
 					.handlers = ansible_shared_handlers,
 					.handler_ct = sizeof(ansible_shared_handlers) / sizeof(preset_section_handler_t),
+				}),
+			},
+			{
+				.name = "apps",
+				.read = load_object,
+				.fresh = true,
+				.state = &ansible_section_object_state,
+				.params = &((load_object_params_t) {
+					.handlers = ansible_app_handlers,
+					.handler_ct = sizeof(ansible_app_handlers) / sizeof(preset_section_handler_t),
 				}),
 			},
 		}),
