@@ -63,6 +63,128 @@ preset_section_handler_t ansible_shared_handlers[] = {
 
 preset_section_handler_t ansible_app_handlers[ANSIBLE_APP_COUNT] = {
 	{
+		.name = "cycles",
+		.read = load_object,
+		.fresh = true,
+		.state = &ansible_app_object_state[0],
+		.params = &((load_object_params_t) {
+			.handler_ct = 2,
+			.handlers = ((preset_section_handler_t[]) {
+				{
+					.name = "curr_preset",
+					.read = load_scalar,
+					.params = &((load_scalar_params_t) {
+						.dst_offset = offsetof(nvram_data_t, cycles_state.preset),
+						.dst_size = sizeof_field(nvram_data_t, cycles_state.preset),
+					}),
+				},
+				{
+					.name = "presets",
+					.read = load_array,
+					.fresh = true,
+					.state = &ansible_load_array_state,
+					.params = &((load_array_params_t) {
+						.array_len = sizeof_field(nvram_data_t, cycles_state.c) / sizeof_field(nvram_data_t, cycles_state.c[0]),
+						.item_size = sizeof_field(nvram_data_t, cycles_state.c[0]),
+						.item_handler = &((preset_section_handler_t) {
+							.read = load_object,
+							.fresh = true,
+							.state = &ansible_app_object_state[1],
+							.params = &((load_object_params_t) {
+								.handler_ct = 9,
+								.handlers = (preset_section_handler_t[]) {
+									{
+										.name = "pos",
+										.read = load_buffer,
+										.fresh = true,
+										.state = &ansible_load_buffer_state,
+										.params = &((load_buffer_params_t) {
+											.buf_len = sizeof_field(nvram_data_t, cycles_state.c[0].pos),
+											.dst_offset = offsetof(nvram_data_t, cycles_state.c[0].pos),
+										}),
+									},
+									{
+										.name = "speed",
+										.read = load_buffer,
+										.fresh = true,
+										.state = &ansible_load_buffer_state,
+										.params = &((load_buffer_params_t) {
+											.buf_len = sizeof_field(nvram_data_t, cycles_state.c[0].speed),
+											.dst_offset = offsetof(nvram_data_t, cycles_state.c[0].speed),
+										}),
+									},
+									{
+										.name = "mult",
+										.read = load_buffer,
+										.fresh = true,
+										.state = &ansible_load_buffer_state,
+										.params = &((load_buffer_params_t) {
+											.buf_len = sizeof_field(nvram_data_t, cycles_state.c[0].mult),
+											.dst_offset = offsetof(nvram_data_t, cycles_state.c[0].mult),
+										}),
+									},
+									{
+										.name = "range",
+										.read = load_buffer,
+										.fresh = true,
+										.state = &ansible_load_buffer_state,
+										.params = &((load_buffer_params_t) {
+											.buf_len = sizeof_field(nvram_data_t, cycles_state.c[0].range),
+											.dst_offset = offsetof(nvram_data_t, cycles_state.c[0].range),
+										}),
+									},
+									{
+										.name = "div",
+										.read = load_buffer,
+										.fresh = true,
+										.state = &ansible_load_buffer_state,
+										.params = &((load_buffer_params_t) {
+											.buf_len = sizeof_field(nvram_data_t, cycles_state.c[0].div),
+											.dst_offset = offsetof(nvram_data_t, cycles_state.c[0].div),
+										}),
+									},
+									{
+										.name = "mode",
+										.read = load_scalar,
+										.params = &((load_scalar_params_t) {
+											.dst_offset = offsetof(nvram_data_t, cycles_state.c[0].mode),
+											.dst_size = sizeof_field(nvram_data_t, cycles_state.c[0].mode),
+										}),
+									},
+									{
+										.name = "shape",
+										.read = load_scalar,
+										.params = &((load_scalar_params_t) {
+											.dst_offset = offsetof(nvram_data_t, cycles_state.c[0].shape),
+											.dst_size = sizeof_field(nvram_data_t, cycles_state.c[0].shape),
+										}),
+									},
+									{
+										.name = "friction",
+										.read = load_scalar,
+										.params = &((load_scalar_params_t) {
+											.dst_offset = offsetof(nvram_data_t, cycles_state.c[0].friction),
+											.dst_size = sizeof_field(nvram_data_t, cycles_state.c[0].friction),
+										}),
+									},
+									{
+										.name = "force",
+										.read = load_scalar,
+										.params = &((load_scalar_params_t) {
+											.dst_offset = offsetof(nvram_data_t, cycles_state.c[0].force),
+											.dst_size = sizeof_field(nvram_data_t, cycles_state.c[0].force),
+										}),
+									},
+								},
+							}),
+						}),
+					}),
+				},
+			}),
+		}),
+	},
+
+	{
 		.name = "midi_standard",
 		.read = load_object,
 		.fresh = true,

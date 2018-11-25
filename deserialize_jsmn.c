@@ -77,7 +77,7 @@ preset_read_result_t load_object(jsmntok_t tok,
 			return PRESET_READ_MALFORMED;
 		}
 		if (tok.end > 0) {
-			for (uint8_t i = state->sections_handled; i < params->handler_ct; i++) {
+			for (uint8_t i = 0; i < params->handler_ct; i++) {
 				if (strncmp(params->handlers[i].name, text + tok.start, tok.end - tok.start) == 0) {
 					state->active_handler = &params->handlers[i];
 					state->active_handler->fresh = true;
@@ -100,6 +100,8 @@ preset_read_result_t load_object(jsmntok_t tok,
 			}
 			handler->fresh = true;
 			return PRESET_READ_OK;
+		default:
+			return PRESET_READ_MALFORMED;
 		}
 	default:
 		return PRESET_READ_MALFORMED;
