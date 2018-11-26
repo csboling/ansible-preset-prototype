@@ -15,6 +15,7 @@ preset_section_handler_t ansible_meta_handlers[] = {
 	{
 		.name = "firmware",
 		.read = match_string,
+		.write = save_string,
 		.params = &((match_string_params_t) {
 			.to_match = ANSIBLE_FIRMWARE_NAME,
 		}),
@@ -22,6 +23,7 @@ preset_section_handler_t ansible_meta_handlers[] = {
 	{
 		.name = "version",
 		.read = match_string,
+		.write = save_string,
 		.params = &((match_string_params_t) {
 			.to_match = ANSIBLE_VERSION,
 		}),
@@ -29,6 +31,7 @@ preset_section_handler_t ansible_meta_handlers[] = {
 	{
 		.name = "i2c_addr",
 		.read = load_scalar,
+		.write = save_number,
 		.params = &((load_scalar_params_t){
 			.dst_offset = offsetof(nvram_data_t, state.i2c_addr),
 			.dst_size = sizeof_field(nvram_data_t, state.i2c_addr),

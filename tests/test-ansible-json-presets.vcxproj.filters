@@ -30,6 +30,9 @@
     <ClCompile Include="..\jsmn\jsmn.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="encoding_tests.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\nvram.h">
@@ -51,6 +54,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\jsmn\jsmn.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="encoding_tests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

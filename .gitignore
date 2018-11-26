@@ -1,6 +1,7 @@
 .vs/
 Debug/
 *.o
+*.tmp
 *~
 program
 ansible-presets.json

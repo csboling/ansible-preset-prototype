@@ -22,6 +22,7 @@
     <ClCompile Include="..\ansible_sections.c" />
     <ClCompile Include="..\deserialize_jsmn.c" />
     <ClCompile Include="..\jsmn\jsmn.c" />
+    <ClCompile Include="encoding_tests.c" />
     <ClCompile Include="happy_path_tests.c" />
     <ClCompile Include="main.c" />
   </ItemGroup>
@@ -31,6 +32,7 @@
     <ClInclude Include="..\jsmn\jsmn.h" />
     <ClInclude Include="..\nvram.h" />
     <ClInclude Include="bad_input_tests.h" />
+    <ClInclude Include="encoding_tests.h" />
     <ClInclude Include="greatest\greatest.h" />
     <ClInclude Include="happy_path_tests.h" />
   </ItemGroup>

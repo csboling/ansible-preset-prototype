@@ -1,7 +1,30 @@
-﻿#include "deserialize_jsmn.h"
+﻿#include <stdlib.h>
 
-int decode_decimal(const char* s, int len) {
-	int ret = 0;
+#include "deserialize_jsmn.h"
+
+char decimal_encoding_buf[12];
+
+char* encode_decimal_unsigned(uint32_t val) {
+	uint8_t i = 10;
+	for (; val && i; --i, val /= 10) {
+		decimal_encoding_buf[i] = (val % 10) + '0';
+	}
+	return &decimal_encoding_buf[i + 1];
+}
+
+char* encode_decimal_signed(int32_t val) {
+	char* ret;
+	if (val < 0) {
+		ret = encode_decimal_unsigned(-val);
+		*--ret = '-';
+	} else {
+		ret = encode_decimal_unsigned(val);
+	}
+	return ret;
+}
+
+int32_t decode_decimal(const char* s, int len) {
+	int32_t ret = 0;
 	// also handle bool
 	if (s[0] == 't') {
 		return 1;
@@ -49,6 +72,13 @@ int decode_hexbuf(char* dst, const char* src, size_t len) {
 		dst[i / 2] = (upper << 4) | lower;
 	}
 	return 0;
+}
+
+char encode_nybble(uint8_t value) {
+	if (value > 0x9) {
+		return value - 0xA + 'A';
+	}
+	return value + '0';
 }
 
 preset_read_result_t load_object(jsmntok_t tok,
@@ -108,6 +138,27 @@ preset_read_result_t load_object(jsmntok_t tok,
 	}
 }
 
+preset_write_result_t save_object(
+	write_buffer_fn write,
+	nvram_data_t* nvram, void* handler_def,
+	size_t src_offset) {
+	preset_section_handler_t* handler = (preset_section_handler_t*)handler_def;
+	load_object_params_t* params = (load_object_params_t*)handler->params;
+
+	write("{", 1);
+	for (uint8_t i = 0; i < params->handler_ct; i++) {
+		write("\"", 1);
+		write(params->handlers[i].name, strlen(params->handlers[i].name));
+		write("\": ", 3);
+		params->handlers[i].write(write, nvram, &params->handlers[i], src_offset);
+		if (i + 1 < params->handler_ct) {
+			write(", ", 2);
+		}
+	}
+	write("}", 1);
+	return PRESET_WRITE_OK;
+}
+
 preset_read_result_t load_scalar(jsmntok_t tok,
 								 nvram_data_t* nvram, void* handler_def,
 								 const char* text, size_t text_len, size_t dst_offset) {
@@ -135,6 +186,79 @@ preset_read_result_t load_scalar(jsmntok_t tok,
 		return PRESET_READ_MALFORMED;
 	}
 	return PRESET_READ_OK;
+}
+
+preset_write_result_t save_number(
+	write_buffer_fn write,
+	nvram_data_t* nvram, void* handler_def,
+	size_t src_offset) {
+	preset_section_handler_t* handler = (preset_section_handler_t*)handler_def;
+	load_scalar_params_t* params = (load_scalar_params_t*)handler->params;
+	void* src = (uint8_t*)nvram + src_offset + params->dst_offset;
+	char* dec;
+
+	if (params->signed_val) {
+		switch (params->dst_size) {
+		case 4:
+			dec = encode_decimal_signed(*(int32_t*)src);
+			break;
+		case 2:
+			dec = encode_decimal_signed(*(int16_t*)src);
+			break;
+		case 1:
+			dec = encode_decimal_signed(*(int8_t*)src);
+			break;
+		default:
+			return PRESET_WRITE_FAILURE;
+		}
+	} else {
+		switch (params->dst_size) {
+		case 4:
+			dec = encode_decimal_unsigned(*(uint32_t*)src);
+			break;
+		case 2:
+			dec = encode_decimal_unsigned(*(uint16_t*)src);
+			break;
+		case 1:
+			dec = encode_decimal_unsigned(*(uint8_t*)src);
+			break;
+		default:
+			return PRESET_WRITE_FAILURE;
+		}
+	}
+	write(dec, strlen(dec));
+	return PRESET_WRITE_OK;
+}
+
+preset_write_result_t save_bool(
+	write_buffer_fn write,
+	nvram_data_t* nvram, void* handler_def,
+	size_t src_offset) {
+	preset_section_handler_t* handler = (preset_section_handler_t*)handler_def;
+	load_scalar_params_t* params = (load_scalar_params_t*)handler->params;
+
+	bool val = *((uint8_t*)nvram + src_offset + params->dst_offset);
+
+	if (val) {
+		write("true", 4);
+	}
+	else {
+		write("false", 5);
+	}
+	return PRESET_WRITE_OK;
+}
+
+preset_write_result_t save_string(
+	write_buffer_fn write,
+	nvram_data_t* nvram, void* handler_def,
+	size_t src_offset) {
+	preset_section_handler_t* handler = (preset_section_handler_t*)handler_def;
+	match_string_params_t* params = (match_string_params_t*)handler->params;
+
+	write("\"", 1);
+	write(params->to_match, strlen(params->to_match));
+	write("\"", 1);
+	return PRESET_WRITE_OK;
 }
 
 preset_read_result_t match_string(jsmntok_t tok,
@@ -196,6 +320,24 @@ preset_read_result_t load_array(jsmntok_t tok,
 	}
 }
 
+preset_write_result_t save_array(
+	write_buffer_fn write,
+	nvram_data_t* nvram, void* handler_def,
+	size_t src_offset) {
+	preset_section_handler_t* handler = (preset_section_handler_t*)handler_def;
+	load_array_params_t* params = (load_array_params_t*)handler->params;
+
+	write("[", 1);
+	for (size_t i = 0; i < params->array_len; i++) {
+		params->item_handler->write(write, nvram, params->item_handler, src_offset + params->item_size * i);
+		if (i + 1 < params->array_len) {
+			write(", ", 2);
+		}
+	}
+	write("]", 1);
+	return PRESET_WRITE_OK;
+}
+
 preset_read_result_t load_buffer(jsmntok_t tok,
 								 nvram_data_t* nvram, void* handler_def,
 								 const char* text, size_t text_len, size_t dst_offset) {
@@ -230,6 +372,26 @@ preset_read_result_t load_buffer(jsmntok_t tok,
 	}
 	state->buf_pos += len;
 	return PRESET_READ_INCOMPLETE;
+}
+
+preset_write_result_t save_buffer(
+	write_buffer_fn write,
+	nvram_data_t* nvram, void* handler_def,
+	size_t src_offset) {
+	char nybble;
+	preset_section_handler_t* handler = (preset_section_handler_t*)handler_def;
+	load_buffer_params_t* params = (load_buffer_params_t*)handler->params;
+
+	write("\"", 1);
+	uint8_t* src = (uint8_t*)nvram + src_offset + params->dst_offset;
+	for (size_t i = 0; i < params->buf_len; i++) {
+		nybble = encode_nybble((src[i] & 0xF0) >> 4);
+		write(&nybble, 1);
+		nybble = encode_nybble(src[i] & 0x0F);
+		write(&nybble, 1);
+	}
+	write("\"", 1);
+	return PRESET_WRITE_OK;
 }
 
 preset_read_result_t preset_deserialize(FILE* fp, nvram_data_t* nvram,
@@ -313,4 +475,17 @@ preset_read_result_t preset_deserialize(FILE* fp, nvram_data_t* nvram,
 		}
     }
 	return PRESET_READ_MALFORMED;
+}
+
+static FILE* active_fp;
+
+void write_to_fp(const uint8_t* buf, size_t len) {
+	fwrite(buf, 1, len, active_fp);
+}
+
+preset_write_result_t preset_serialize(FILE* fp, nvram_data_t* nvram, preset_section_handler_t* handler) {
+	active_fp = fp;
+	preset_write_result_t ret = handler->write(write_to_fp, nvram, handler, 0);
+	write_to_fp("\0", 1);
+	return ret;
 }

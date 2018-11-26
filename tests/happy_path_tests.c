@@ -27,37 +27,68 @@ preset_section_handler_t* find_app_handler(char* name) {
 	return NULL;
 }
 
-FILE* write_temp_file(const char* text, size_t len) {
-	FILE* fp = fopen("data.tmp", "w");
+FILE* write_temp_file(const char* name, const char* text, size_t len) {
+	FILE* fp = fopen(name, "w");
 	fwrite(text, 1, len, fp);
 	fclose(fp);
-	return fopen("data.tmp", "r");
+	return fopen(name, "r");
+}
+
+char cmp_buf[2][4096];
+
+bool compare_files(const char* left, const char* right) {
+	FILE* l = fopen(left, "r");
+	FILE* r = fopen(right, "r");
+	size_t l_ct, r_ct;
+	while (true) {
+		l_ct = fread(cmp_buf[0], 1, sizeof(cmp_buf), l);
+		r_ct = fread(cmp_buf[1], 1, sizeof(cmp_buf), r);
+		if (l_ct == 0 && r_ct == 0) {
+			return true;
+		}
+		if (l_ct < 0 || r_ct < 0 || l_ct != r_ct) {
+			return false;
+		}
+
+		if (strncmp(cmp_buf[0], cmp_buf[1], l_ct) != 0) {
+			return false;
+		}
+	}
 }
 
 TEST meta_read_ok() {
 	const char meta[] = "{"
-		"\"firmware\": \"" ANSIBLE_FIRMWARE_NAME "\","
-		"\"version\": \"" ANSIBLE_VERSION "\","
+		"\"firmware\": \"" ANSIBLE_FIRMWARE_NAME "\", "
+		"\"version\": \"" ANSIBLE_VERSION "\", "
 		"\"i2c_addr\": 160"
 	"}";
-	FILE* fp = write_temp_file(meta, sizeof(meta));
+	preset_section_handler_t handler = {
+		.read = load_object,
+		.write = save_object,
+		.fresh = true,
+		.state = &object_state,
+		.params = &((load_object_params_t) {
+			.handlers = ansible_meta_handlers,
+			.handler_ct = 3,
+		}),
+	};
+	FILE* fp = write_temp_file("in.tmp", meta, sizeof(meta));
 
 	preset_read_result_t result = preset_deserialize(fp,
-		&nvram, &((preset_section_handler_t) {
-			.read = load_object,
-			.fresh = true,
-			.state = &object_state,
-			.params = &((load_object_params_t) {
-				.handlers = ansible_meta_handlers,
-				.handler_ct = 3,
-			}),
-		}),
+		&nvram, &handler,
 		buf, sizeof(buf),
 		tokens, sizeof(tokens) / sizeof(jsmntok_t));
 	fclose(fp);
 
 	ASSERT_EQ(result, PRESET_READ_OK);
 	ASSERT_EQ(nvram.state.i2c_addr, 160);
+
+	fp = fopen("out.tmp", "w");
+	preset_write_result_t wr_result = preset_serialize(fp, &nvram, &handler);
+	fclose(fp);
+
+	ASSERT_FALSE(!compare_files("in.tmp", "out.tmp"));
+
 	PASS();
 }
 
@@ -82,7 +113,7 @@ TEST shared_read_ok() {
 			"\"f000000000000000\","
 		"]"
 	"}";
-	FILE* fp = write_temp_file(shared, sizeof(shared));
+	FILE* fp = write_temp_file("in.tmp", shared, sizeof(shared));
 
 	preset_read_result_t result = preset_deserialize(fp,
 		&nvram, &((preset_section_handler_t) {
@@ -300,7 +331,7 @@ TEST cycles_read_ok() {
 			"},"
 		"]"
 	"}";
-	FILE* fp = write_temp_file(cycles, sizeof(cycles));
+	FILE* fp = write_temp_file("in.tmp", cycles, sizeof(cycles));
 	preset_section_handler_t* handler = find_app_handler("cycles");
 
 	preset_read_result_t result = preset_deserialize(fp,
@@ -324,7 +355,7 @@ TEST midi_standard_read_ok() {
 		"\"shift\": -12345,"
 		"\"slew\": 12345"
 	"}";
-	FILE* fp = write_temp_file(midi_standard, sizeof(midi_standard));
+	FILE* fp = write_temp_file("in.tmp", midi_standard, sizeof(midi_standard));
 	preset_section_handler_t* handler = find_app_handler("midi_standard");
 
 	preset_read_result_t result = preset_deserialize(fp,
@@ -391,7 +422,7 @@ TEST midi_arp_read_ok() {
 			"}"
 		"]"
 	"}";
-	FILE* fp = write_temp_file(midi_arp, sizeof(midi_arp));
+	FILE* fp = write_temp_file("in.tmp", midi_arp, sizeof(midi_arp));
 	preset_section_handler_t* handler = find_app_handler("midi_arp");
 
 	preset_read_result_t result = preset_deserialize(fp,
@@ -415,7 +446,7 @@ TEST tt_read_ok() {
 		"\"tr_time\": \"0011223344556677\","
 		"\"cv_slew\": \"8899aabbccddeeff\""
 	"}";
-	FILE* fp = write_temp_file(tt, sizeof(tt));
+	FILE* fp = write_temp_file("in.tmp", tt, sizeof(tt));
 	preset_section_handler_t* handler = find_app_handler("tt");
 
 	preset_read_result_t result = preset_deserialize(fp,
