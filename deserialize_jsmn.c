@@ -104,25 +104,26 @@ preset_read_result_t load_object(jsmntok_t tok,
 		state->object_state = MATCH_SECTION_NAME;
 		return PRESET_READ_INCOMPLETE;
 	case SKIP_SECTION:
-		if (tok.depth != state->depth) {
+		if (tok.depth != state->depth || tok.type != JSMN_STRING) {
 			return PRESET_READ_INCOMPLETE;
 		}
 		state->object_state = MATCH_SECTION_NAME;
 		// fallthrough
 	case MATCH_SECTION_NAME:
-		if (tok.type == JSMN_STRING) {
-			if (tok.end > 0) {
-				for (uint8_t i = 0; i < params->handler_ct; i++) {
-					if (strncmp(params->handlers[i].name, text + tok.start, tok.end - tok.start) == 0) {
-						state->active_handler = &params->handlers[i];
-						state->active_handler->fresh = true;
-						state->object_state = MATCH_PARSE_SECTION;
-						return PRESET_READ_INCOMPLETE;
-					}
+		if (tok.type != JSMN_STRING) {
+			return PRESET_READ_MALFORMED;
+		}
+		if (tok.end > 0) {
+			for (uint8_t i = 0; i < params->handler_ct; i++) {
+				if (strncmp(params->handlers[i].name, text + tok.start, tok.end - tok.start) == 0) {
+					state->active_handler = &params->handlers[i];
+					state->active_handler->fresh = true;
+					state->object_state = MATCH_PARSE_SECTION;
+					return PRESET_READ_INCOMPLETE;
 				}
-				state->object_state = SKIP_SECTION;
-				state->depth = tok.depth;
 			}
+			state->object_state = SKIP_SECTION;
+			state->depth = tok.depth;
 		}
 		return PRESET_READ_INCOMPLETE;
 	case MATCH_PARSE_SECTION:
