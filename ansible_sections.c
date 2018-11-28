@@ -43,6 +43,7 @@ preset_section_handler_t ansible_shared_handlers[] = {
 	{
 		.name = "scales",
 		.read = load_array,
+		.write = save_array,
 		.fresh = true,
 		.state = &ansible_load_array_state,
 		.params = &((load_array_params_t) {
@@ -50,6 +51,7 @@ preset_section_handler_t ansible_shared_handlers[] = {
 			.item_size = sizeof_field(nvram_data_t, scale[0]),
 			.item_handler = &((preset_section_handler_t) {
 				.read = load_buffer,
+				.write = save_buffer,
 				.fresh = true,
 				.state = &ansible_load_buffer_state,
 				.params = &((load_buffer_params_t) {
@@ -428,6 +430,7 @@ preset_section_handler_t ansible_app_handlers[ANSIBLE_APP_COUNT] = {
 
 preset_section_handler_t ansible_handler = {
 	.read = load_object,
+	.write = save_object,
 	.fresh = true,
 	.state = &ansible_root_object_state,
 	.params = &((load_object_params_t) {
@@ -436,6 +439,7 @@ preset_section_handler_t ansible_handler = {
 			{
 				.name = "meta",
 				.read = load_object,
+				.write = save_object,
 				.fresh = true,
 				.state = &ansible_section_object_state,
 				.params = &((load_object_params_t) {
@@ -446,6 +450,7 @@ preset_section_handler_t ansible_handler = {
 			{
 				.name = "shared",
 				.read = load_object,
+				.write = save_object,
 				.fresh = true,
 				.state = &ansible_section_object_state,
 				.params = &((load_object_params_t) {
@@ -456,6 +461,7 @@ preset_section_handler_t ansible_handler = {
 			{
 				.name = "apps",
 				.read = load_object,
+				.write = save_object,
 				.fresh = true,
 				.state = &ansible_section_object_state,
 				.params = &((load_object_params_t) {

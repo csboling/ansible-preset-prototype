@@ -1,4 +1,4 @@
-#ifndef __JSMN_H_
+﻿#ifndef __JSMN_H_
 #define __JSMN_H_
 
 #include <stddef.h>
@@ -42,6 +42,7 @@ typedef struct {
 	int start;
 	int end;
 	int size;
+	unsigned int depth;
 #ifdef JSMN_PARENT_LINKS
 	int parent;
 #endif
@@ -54,6 +55,7 @@ typedef struct {
 typedef struct {
 	unsigned int pos; /* offset in the JSON string */
 	unsigned int toknext; /* next token to allocate */
+	unsigned int depth;
 	int toksuper; /* superior token node, e.g parent object or array */
 } jsmn_parser;
 

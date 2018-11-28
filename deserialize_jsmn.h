@@ -30,7 +30,7 @@ typedef preset_read_result_t(*preset_reader_cb)(
 	jsmntok_t token,
 	nvram_data_t* nvram, void* handler_def,
 	const char* text, size_t text_len,
-	size_t dst_offset);
+	size_t dst_offset, unsigned int depth);
 typedef preset_write_result_t(*preset_writer_cb)(
 	write_buffer_fn write,
 	nvram_data_t* nvram, void* handler_def,
@@ -51,14 +51,12 @@ typedef struct {
 	jsmn_parser jsmn;
 
     size_t text_ct;
-	int tok_ct;
-	int curr_tok;
+	unsigned int curr_tok;
 } preset_read_state_t;
 
 char* encode_decimal_unsigned(uint32_t val);
 char* encode_decimal_signed(int32_t val);
 int32_t decode_decimal(const char* s, int len);
-preset_write_result_t encode_decimal(int in, char* s, int len);
 int decode_hexbuf(char* dst, const char* src, size_t len);
 char encode_nybble(uint8_t val);
 
@@ -66,13 +64,14 @@ preset_read_result_t load_object(
 	jsmntok_t tok,
 	nvram_data_t* nvram, void* handler_def,
 	const char* text, size_t text_len,
-	size_t dst_offset);
+	size_t dst_offset, unsigned int depth);
 preset_write_result_t save_object(
 	write_buffer_fn write,
 	nvram_data_t* nvram, void* handler_def,
 	size_t src_offset);
 typedef enum {
 	MATCH_START_OBJECT,
+	SKIP_SECTION,
 	MATCH_SECTION_NAME,
 	MATCH_PARSE_SECTION,
 } object_state_t;
@@ -84,13 +83,14 @@ typedef struct {
 	object_state_t object_state;
 	preset_section_handler_t* active_handler;
 	uint8_t sections_handled;
+	unsigned int depth;
 } load_object_state_t;
 
 preset_read_result_t load_array(
 	jsmntok_t tok,
 	nvram_data_t* nvram, void* handler_def,
 	const char* text, size_t text_len,
-	size_t dst_offset);
+	size_t dst_offset, unsigned int depth);
 preset_write_result_t save_array(
 	write_buffer_fn write,
 	nvram_data_t* nvram, void* handler_def,
@@ -111,7 +111,7 @@ typedef struct {
 
 preset_read_result_t load_scalar(jsmntok_t tok,
 	nvram_data_t* nvram, void* handler_def,
-	const char* text, size_t text_len, size_t dst_offset);
+	const char* text, size_t text_len, size_t dst_offset, unsigned int depth);
 preset_write_result_t save_number(
 	write_buffer_fn write,
 	nvram_data_t* nvram, void* handler_def,
@@ -132,14 +132,14 @@ typedef struct {
 
 preset_read_result_t match_string(jsmntok_t tok,
 	nvram_data_t* nvram, void* handler_def,
-	const char* text, size_t text_len, size_t dst_offset);
+	const char* text, size_t text_len, size_t dst_offset, unsigned int depth);
 typedef struct {
 	const char* to_match;
 } match_string_params_t;
 
 preset_read_result_t load_buffer(jsmntok_t tok,
 	nvram_data_t* nvram, void* handler_def,
-	const char* text, size_t text_len, size_t dst_offset);
+	const char* text, size_t text_len, size_t dst_offset, unsigned int depth);
 preset_write_result_t save_buffer(
 	write_buffer_fn write,
 	nvram_data_t* nvram, void* handler_def,

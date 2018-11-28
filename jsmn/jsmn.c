@@ -12,6 +12,7 @@ static jsmntok_t *jsmn_alloc_token(jsmn_parser *parser,
 	tok = &tokens[parser->toknext++];
 	tok->start = tok->end = -1;
 	tok->size = 0;
+	tok->depth = parser->depth;
 #ifdef JSMN_PARENT_LINKS
 	tok->parent = -1;
 #endif
@@ -178,6 +179,7 @@ int jsmn_parse(jsmn_parser *parser, const char *js, size_t len,
 				token->type = (c == '{' ? JSMN_OBJECT : JSMN_ARRAY);
 				token->start = parser->pos;
 				parser->toksuper = parser->toknext - 1;
+				parser->depth++;
 				break;
 			case '}': case ']':
 				if (tokens == NULL)
@@ -229,6 +231,7 @@ int jsmn_parse(jsmn_parser *parser, const char *js, size_t len,
 					}
 				}
 #endif
+				parser->depth--;
 				break;
 			case '\"':
 				r = jsmn_parse_string(parser, js, len, tokens, num_tokens);
@@ -312,5 +315,6 @@ void jsmn_init(jsmn_parser *parser) {
 	parser->pos = 0;
 	parser->toknext = 0;
 	parser->toksuper = -1;
+	parser->depth = 0;
 }
 

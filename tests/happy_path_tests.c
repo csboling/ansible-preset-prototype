@@ -92,39 +92,42 @@ TEST meta_read_ok() {
 	PASS();
 }
 
+preset_section_handler_t shared_handler = {
+	.read = load_object,
+	.write = save_object,
+	.fresh = true,
+	.state = &object_state,
+	.params = &((load_object_params_t) {
+		.handlers = ansible_shared_handlers,
+		.handler_ct = 1,
+	}),
+};
+
 TEST shared_read_ok() {
 	const char shared[] = "{"
 		"\"scales\": ["
-			"\"0011223344556677\","
-			"\"1899aaBBccDDeeFF\","
-			"\"2000000000000000\","
-			"\"3000000000000000\","
-			"\"4000000000000000\","
-			"\"5000000000000000\","
-			"\"6000000000000000\","
-			"\"7000000000000000\","
-			"\"8000000000000000\","
-			"\"9000000000000000\","
-			"\"A000000000000000\","
-			"\"b000000000000000\","
-			"\"C000000000000000\","
-			"\"d000000000000000\","
-			"\"E000000000000000\","
-			"\"f000000000000000\","
+			"\"0011223344556677\", "
+			"\"1899AABBCCDDEEFF\", "
+			"\"2000000000000000\", "
+			"\"3000000000000000\", "
+			"\"4000000000000000\", "
+			"\"5000000000000000\", "
+			"\"6000000000000000\", "
+			"\"7000000000000000\", "
+			"\"8000000000000000\", "
+			"\"9000000000000000\", "
+			"\"A000000000000000\", "
+			"\"B000000000000000\", "
+			"\"C000000000000000\", "
+			"\"D000000000000000\", "
+			"\"E000000000000000\", "
+			"\"F000000000000000\""
 		"]"
 	"}";
 	FILE* fp = write_temp_file("in.tmp", shared, sizeof(shared));
 
 	preset_read_result_t result = preset_deserialize(fp,
-		&nvram, &((preset_section_handler_t) {
-			.read = load_object,
-			.fresh = true,
-			.state = &object_state,
-			.params = &((load_object_params_t) {
-				.handlers = ansible_shared_handlers,
-				.handler_ct = 1, 
-			}),
-		}),
+		&nvram, &shared_handler,
 		buf, sizeof(buf),
 		tokens, sizeof(tokens) / sizeof(jsmntok_t));
 	fclose(fp);
@@ -146,6 +149,13 @@ TEST shared_read_ok() {
 			&nvram.scale[i][1],
 			7);
 	}
+
+	fp = fopen("out.tmp", "w");
+	preset_write_result_t wr_result = preset_serialize(fp, &nvram, &shared_handler);
+	fclose(fp);
+
+	ASSERT_FALSE(!compare_files("in.tmp", "out.tmp"));
+
 	PASS();
 }
 
