@@ -1,61 +1,10 @@
-﻿// for htons and friends
-#ifdef _WIN32
-#include <WinSock2.h>
-#pragma comment(lib, "Ws2_32.lib")
-#else
-#include <arpa/inet.h>
-#endif
-
-#include "happy_path_tests.h"
+﻿#include "happy_path_tests.h"
+#include "test_common.h"
 
 #include "greatest/greatest.h"
 
 #include "deserialize_jsmn.h"
 #include "ansible_sections.h"
-
-char buf[128];
-jsmntok_t tokens[8];
-nvram_data_t nvram;
-load_object_state_t object_state;
-
-preset_section_handler_t* find_app_handler(char* name) {
-	memset(&nvram, 0, sizeof(nvram_data_t));
-	for (int i = 0; i < ANSIBLE_APP_COUNT; i++) {
-		if (strcmp(ansible_app_handlers[i].name, name) == 0) {
-			return &ansible_app_handlers[i];
-		}
-	}
-	return NULL;
-}
-
-FILE* write_temp_file(const char* name, const char* text, size_t len) {
-	FILE* fp = fopen(name, "w");
-	fwrite(text, 1, len, fp);
-	fclose(fp);
-	return fopen(name, "r");
-}
-
-char cmp_buf[2][4096];
-
-bool compare_files(const char* left, const char* right) {
-	FILE* l = fopen(left, "r");
-	FILE* r = fopen(right, "r");
-	size_t l_ct, r_ct;
-	while (true) {
-		l_ct = fread(cmp_buf[0], 1, sizeof(cmp_buf), l);
-		r_ct = fread(cmp_buf[1], 1, sizeof(cmp_buf), r);
-		if (l_ct == 0 && r_ct == 0) {
-			return true;
-		}
-		if (l_ct < 0 || r_ct < 0 || l_ct != r_ct) {
-			return false;
-		}
-
-		if (strncmp(cmp_buf[0], cmp_buf[1], l_ct) != 0) {
-			return false;
-		}
-	}
-}
 
 TEST skips_unknown_sections() {
 	const char meta[] = "{"
@@ -508,10 +457,33 @@ TEST tt_read_ok() {
 
 	ASSERT_EQ(result, PRESET_READ_OK);
 	ASSERT_EQ(12345678, nvram.tt_state.clock_period);
-	ASSERT_EQ(htons(0x0011), nvram.tt_state.tr_time[0]);
-	ASSERT_EQ(htons(0x4455), nvram.tt_state.tr_time[2]);
-	ASSERT_EQ(htons(0xAABB), nvram.tt_state.cv_slew[1]);
-	ASSERT_EQ(htons(0xEEFF), nvram.tt_state.cv_slew[3]);
+	
+	{
+		uint16_t expected[] = {
+			0x0011,
+			0x2233,
+			0x4455,
+			0x6677,
+		};
+		ASSERT_FALSE(!compare_short_big_endian(
+			expected,
+			nvram.tt_state.tr_time,
+			sizeof(expected) / sizeof(uint16_t)));
+	}
+
+	{
+		uint16_t expected[] = {
+			0x8899,
+			0xaabb,
+			0xccdd,
+			0xeeff,
+		};
+		ASSERT_FALSE(!compare_short_big_endian(
+			expected,
+			nvram.tt_state.cv_slew,
+			sizeof(expected) / sizeof(uint16_t)));
+	}
+
 	PASS();
 }
 

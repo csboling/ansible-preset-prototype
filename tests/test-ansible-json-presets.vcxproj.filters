@@ -33,6 +33,12 @@
     <ClCompile Include="encoding_tests.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="end_to_end_tests.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_common.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\nvram.h">
@@ -57,6 +63,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="encoding_tests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="end_to_end_tests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="test_common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
