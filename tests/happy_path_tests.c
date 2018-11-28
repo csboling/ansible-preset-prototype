@@ -19,6 +19,7 @@ nvram_data_t nvram;
 load_object_state_t object_state;
 
 preset_section_handler_t* find_app_handler(char* name) {
+	memset(&nvram, 0, sizeof(nvram_data_t));
 	for (int i = 0; i < ANSIBLE_APP_COUNT; i++) {
 		if (strcmp(ansible_app_handlers[i].name, name) == 0) {
 			return &ansible_app_handlers[i];
@@ -56,6 +57,43 @@ bool compare_files(const char* left, const char* right) {
 	}
 }
 
+TEST skips_unknown_sections() {
+	const char meta[] = "{"
+		"\"firmware\": \"" ANSIBLE_FIRMWARE_NAME "\", "
+		"\"unknownSection\": {"
+			"\"lots\": [\"of\", \"stuff\"],"
+			"\"to\": {"
+			  "\"skip\": \"over\", "
+			  "\"onetwo\": 345"
+			"}"
+		"},"
+		"\"version\": \"" ANSIBLE_VERSION "\", "
+		"\"i2c_addr\": 160"
+	"}";
+	preset_section_handler_t handler = {
+		.read = load_object,
+		.write = save_object,
+		.fresh = true,
+		.state = &object_state,
+		.params = &((load_object_params_t) {
+			.handlers = ansible_meta_handlers,
+			.handler_ct = 3,
+		}),
+	};
+	FILE* fp = write_temp_file("in.tmp", meta, sizeof(meta));
+	memset(&nvram, 0, sizeof(nvram_data_t));
+
+	preset_read_result_t result = preset_deserialize(fp,
+		&nvram, &handler,
+		buf, sizeof(buf),
+		tokens, sizeof(tokens) / sizeof(jsmntok_t));
+	fclose(fp);
+
+	ASSERT_EQ(result, PRESET_READ_OK);
+	ASSERT_EQ(nvram.state.i2c_addr, 160);
+	PASS();
+}
+
 TEST meta_read_ok() {
 	const char meta[] = "{"
 		"\"firmware\": \"" ANSIBLE_FIRMWARE_NAME "\", "
@@ -73,6 +111,7 @@ TEST meta_read_ok() {
 		}),
 	};
 	FILE* fp = write_temp_file("in.tmp", meta, sizeof(meta));
+	memset(&nvram, 0, sizeof(nvram_data_t));
 
 	preset_read_result_t result = preset_deserialize(fp,
 		&nvram, &handler,
@@ -125,6 +164,7 @@ TEST shared_read_ok() {
 		"]"
 	"}";
 	FILE* fp = write_temp_file("in.tmp", shared, sizeof(shared));
+	memset(&nvram, 0, sizeof(nvram_data_t));
 
 	preset_read_result_t result = preset_deserialize(fp,
 		&nvram, &shared_handler,
@@ -343,6 +383,7 @@ TEST cycles_read_ok() {
 	"}";
 	FILE* fp = write_temp_file("in.tmp", cycles, sizeof(cycles));
 	preset_section_handler_t* handler = find_app_handler("cycles");
+	memset(&nvram, 0, sizeof(nvram_data_t));
 
 	preset_read_result_t result = preset_deserialize(fp,
 		&nvram, handler,
@@ -475,6 +516,8 @@ TEST tt_read_ok() {
 }
 
 SUITE(happy_path_suite) {
+	RUN_TEST(skips_unknown_sections);
+
 	RUN_TEST(meta_read_ok);
 	RUN_TEST(shared_read_ok);
 
