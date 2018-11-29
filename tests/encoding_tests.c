@@ -27,10 +27,12 @@ TEST hexbuf_decode(const char* s, size_t len, const char* hex) {
 }
 
 SUITE(encoding_suite) {
+  RUN_TESTp(decimal_signed_round_trip, "0", 1, 0);
   RUN_TESTp(decimal_signed_round_trip, "123", 3, 123);
   RUN_TESTp(decimal_signed_round_trip, "2147483647", 10, 2147483647);
   RUN_TESTp(decimal_signed_round_trip, "-123", 4, -123);
   RUN_TESTp(decimal_signed_round_trip, "-2147483648", 11, -2147483647 - 1);
+  RUN_TESTp(decimal_unsigned_round_trip, "0", 1, 0);
   RUN_TESTp(decimal_unsigned_round_trip, "4294967295", 10, 4294967295);
 
   RUN_TESTp(hexbuf_decode, "00112233", 8, "\x00\x11\x22\x33");

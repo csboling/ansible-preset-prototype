@@ -2,12 +2,17 @@
 
 #include "deserialize_jsmn.h"
 
-char decimal_encoding_buf[12];
 
 char* encode_decimal_unsigned(uint32_t val) {
+	static char decimal_encoding_buf[12] = { 0 };
 	uint8_t i = 10;
-	for (; val && i; --i, val /= 10) {
-		decimal_encoding_buf[i] = (val % 10) + '0';
+	if (val == 0) {
+		decimal_encoding_buf[i--] = '0';
+	}
+	else {
+		for (; val && i; --i, val /= 10) {
+			decimal_encoding_buf[i] = (val % 10) + '0';
+		}
 	}
 	return &decimal_encoding_buf[i + 1];
 }
