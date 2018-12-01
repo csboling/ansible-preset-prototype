@@ -291,6 +291,51 @@ preset_read_result_t match_string(jsmntok_t tok,
 	}
 	return PRESET_READ_OK;
 }
+preset_read_result_t load_enum(jsmntok_t tok,
+	nvram_data_t* nvram, void* handler_def,
+	const char* text, size_t text_len, size_t dst_offset, unsigned int depth) {
+	preset_section_handler_t* handler = (preset_section_handler_t*)handler_def;
+	load_enum_params_t* params = (load_enum_params_t*)handler->params;
+
+	int* dst = (int*)((uint8_t*)nvram + params->dst_offset + dst_offset);
+
+	if (tok.end < 0) {
+		return PRESET_READ_INCOMPLETE;
+	}
+	if (tok.type == JSMN_PRIMITIVE) {
+		*dst = decode_decimal(text + tok.start, tok.end - tok.start);
+		return PRESET_READ_OK;
+	}
+	if (tok.type != JSMN_STRING) {
+		return PRESET_READ_MALFORMED;
+	}
+
+	for (uint8_t i = 0; i < params->option_ct; i++) {
+		if (strncmp(params->options[i], text + tok.start, tok.end - tok.start) == 0) {
+			*dst = i;
+			break;
+		}
+	}
+	return PRESET_READ_OK;
+}
+
+preset_write_result_t save_enum(
+	write_buffer_fn write,
+	nvram_data_t* nvram, void* handler_def,
+	size_t src_offset) {
+	preset_section_handler_t* handler = (preset_section_handler_t*)handler_def;
+	load_enum_params_t* params = (load_enum_params_t*)handler->params;
+
+	int* src = (int*)((uint8_t*)nvram + src_offset + params->dst_offset);
+	if (*src < 0 || *src >= params->option_ct) {
+		write("null", 4);
+		return PRESET_WRITE_OK;
+	}
+	write("\"", 1);
+	write(params->options[*src], strlen(params->options[*src]));
+	write("\"", 1);
+	return PRESET_WRITE_OK;
+}
 
 preset_read_result_t load_array(jsmntok_t tok,
 								nvram_data_t* nvram, void* handler_def,
@@ -493,6 +538,5 @@ void write_to_fp(const uint8_t* buf, size_t len) {
 preset_write_result_t preset_serialize(FILE* fp, nvram_data_t* nvram, preset_section_handler_t* handler) {
 	active_fp = fp;
 	preset_write_result_t ret = handler->write(write_to_fp, nvram, handler, 0);
-	write_to_fp("\0", 1);
 	return ret;
 }

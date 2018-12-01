@@ -137,6 +137,19 @@ typedef struct {
 	const char* to_match;
 } match_string_params_t;
 
+preset_read_result_t load_enum(jsmntok_t tok,
+	nvram_data_t* nvram, void* handler_def,
+	const char* text, size_t text_len, size_t dst_offset, unsigned int depth);
+preset_write_result_t save_enum(
+	write_buffer_fn write,
+	nvram_data_t* nvram, void* handler_def,
+	size_t src_offset);
+typedef struct {
+	uint8_t option_ct;
+	const char** options;
+	size_t dst_offset;
+} load_enum_params_t;
+
 preset_read_result_t load_buffer(jsmntok_t tok,
 	nvram_data_t* nvram, void* handler_def,
 	const char* text, size_t text_len, size_t dst_offset, unsigned int depth);

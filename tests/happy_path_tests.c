@@ -29,7 +29,7 @@ TEST skips_unknown_sections() {
 			.handler_ct = 3,
 		}),
 	};
-	FILE* fp = write_temp_file("in.tmp", meta, sizeof(meta));
+	FILE* fp = write_temp_file("in.tmp", meta, sizeof(meta) - 1);
 	memset(&nvram, 0, sizeof(nvram_data_t));
 
 	preset_read_result_t result = preset_deserialize(fp,
@@ -47,7 +47,12 @@ TEST meta_read_ok() {
 	const char meta[] = "{"
 		"\"firmware\": \"" ANSIBLE_FIRMWARE_NAME "\", "
 		"\"version\": \"" ANSIBLE_VERSION "\", "
-		"\"i2c_addr\": 160"
+		"\"i2c_addr\": 160, "
+		"\"connected\": \"conGRID\", "
+		"\"arc_mode\": \"mArcCycles\", "
+		"\"grid_mode\": \"mGridKria\", "
+		"\"midi_mode\": \"mMidiArp\", " 
+		"\"none_mode\": \"mTT\""
 	"}";
 	preset_section_handler_t handler = {
 		.read = load_object,
@@ -56,10 +61,10 @@ TEST meta_read_ok() {
 		.state = &object_state,
 		.params = &((load_object_params_t) {
 			.handlers = ansible_meta_handlers,
-			.handler_ct = 3,
+			.handler_ct = 8,
 		}),
 	};
-	FILE* fp = write_temp_file("in.tmp", meta, sizeof(meta));
+	FILE* fp = write_temp_file("in.tmp", meta, sizeof(meta) - 1);
 	memset(&nvram, 0, sizeof(nvram_data_t));
 
 	preset_read_result_t result = preset_deserialize(fp,
@@ -70,6 +75,11 @@ TEST meta_read_ok() {
 
 	ASSERT_EQ(result, PRESET_READ_OK);
 	ASSERT_EQ(nvram.state.i2c_addr, 160);
+	ASSERT_EQ(nvram.state.connected, conGRID);
+	ASSERT_EQ(nvram.state.arc_mode, mArcCycles);
+	ASSERT_EQ(nvram.state.grid_mode, mGridKria);
+	ASSERT_EQ(nvram.state.midi_mode, mMidiArp);
+	ASSERT_EQ(nvram.state.none_mode, mTT);
 
 	fp = fopen("out.tmp", "w");
 	preset_write_result_t wr_result = preset_serialize(fp, &nvram, &handler);
@@ -112,7 +122,7 @@ TEST shared_read_ok() {
 			"\"F000000000000000\""
 		"]"
 	"}";
-	FILE* fp = write_temp_file("in.tmp", shared, sizeof(shared));
+	FILE* fp = write_temp_file("in.tmp", shared, sizeof(shared) - 1);
 	memset(&nvram, 0, sizeof(nvram_data_t));
 
 	preset_read_result_t result = preset_deserialize(fp,
@@ -242,7 +252,7 @@ TEST cycles_read_ok() {
 			"}"
 		"]"
 	"}";
-	FILE* fp = write_temp_file("in.tmp", cycles, sizeof(cycles));
+	FILE* fp = write_temp_file("in.tmp", cycles, sizeof(cycles) - 1);
 	preset_section_handler_t* handler = find_app_handler("cycles");
 	memset(&nvram, 0, sizeof(nvram_data_t));
 
@@ -274,7 +284,7 @@ TEST midi_standard_read_ok() {
 		"\"shift\": -12345, "
 		"\"slew\": 12345"
 	"}";
-	FILE* fp = write_temp_file("in.tmp", midi_standard, sizeof(midi_standard));
+	FILE* fp = write_temp_file("in.tmp", midi_standard, sizeof(midi_standard) - 1);
 	preset_section_handler_t* handler = find_app_handler("midi_standard");
 
 	preset_read_result_t result = preset_deserialize(fp,
@@ -348,7 +358,7 @@ TEST midi_arp_read_ok() {
 			"}"
 		"]"
 	"}";
-	FILE* fp = write_temp_file("in.tmp", midi_arp, sizeof(midi_arp));
+	FILE* fp = write_temp_file("in.tmp", midi_arp, sizeof(midi_arp) - 1);
 	preset_section_handler_t* handler = find_app_handler("midi_arp");
 
 	preset_read_result_t result = preset_deserialize(fp,
@@ -378,7 +388,7 @@ TEST tt_read_ok() {
 		"\"tr_time\": \"0011223344556677\", "
 		"\"cv_slew\": \"8899AABBCCDDEEFF\""
 	"}";
-	FILE* fp = write_temp_file("in.tmp", tt, sizeof(tt));
+	FILE* fp = write_temp_file("in.tmp", tt, sizeof(tt) - 1);
 	preset_section_handler_t* handler = find_app_handler("tt");
 
 	preset_read_result_t result = preset_deserialize(fp,

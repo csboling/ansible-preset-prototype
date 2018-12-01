@@ -8,6 +8,23 @@ load_object_state_t ansible_app_object_state[2];
 load_buffer_state_t ansible_load_buffer_state;
 load_array_state_t ansible_load_array_state;
 
+const char* connected_t_options[] = {
+	"conNONE",
+	"conARC",
+	"conGRID",
+	"conMIDI",
+	"conFLASH",
+};
+const char* ansible_mode_options[] = {
+	"mArcLevels",
+	"mArcCycles",
+	"mGridKria",
+	"mGridMP",
+	"mMidiStandard",
+	"mMidiArp",
+	"mTT",
+};
+
 /////////
 // meta + shared
 
@@ -35,6 +52,56 @@ preset_section_handler_t ansible_meta_handlers[] = {
 		.params = &((load_scalar_params_t){
 			.dst_offset = offsetof(nvram_data_t, state.i2c_addr),
 			.dst_size = sizeof_field(nvram_data_t, state.i2c_addr),
+		}),
+	},
+	{
+		.name = "connected",
+		.read = load_enum,
+		.write = save_enum,
+		.params = &((load_enum_params_t) {
+			.option_ct = sizeof(connected_t_options) / sizeof(connected_t_options[0]),
+			.options = connected_t_options,
+			.dst_offset = offsetof(nvram_data_t, state.connected),
+		}),
+	},
+	{
+		.name = "arc_mode",
+		.read = load_enum,
+		.write = save_enum,
+		.params = &((load_enum_params_t) {
+			.option_ct = sizeof(ansible_mode_options) / sizeof(ansible_mode_options[0]),
+			.options = ansible_mode_options,
+			.dst_offset = offsetof(nvram_data_t, state.arc_mode),
+		}),
+	},
+	{
+		.name = "grid_mode",
+		.read = load_enum,
+		.write = save_enum,
+		.params = &((load_enum_params_t) {
+			.option_ct = sizeof(ansible_mode_options) / sizeof(ansible_mode_options[0]),
+			.options = ansible_mode_options,
+			.dst_offset = offsetof(nvram_data_t, state.grid_mode),
+		}),
+	},
+	{
+		.name = "midi_mode",
+		.read = load_enum,
+		.write = save_enum,
+		.params = &((load_enum_params_t) {
+			.option_ct = sizeof(ansible_mode_options) / sizeof(ansible_mode_options[0]),
+			.options = ansible_mode_options,
+			.dst_offset = offsetof(nvram_data_t, state.midi_mode),
+		}),
+	},
+	{
+		.name = "none_mode",
+		.read = load_enum,
+		.write = save_enum,
+		.params = &((load_enum_params_t) {
+			.option_ct = sizeof(ansible_mode_options) / sizeof(ansible_mode_options[0]),
+			.options = ansible_mode_options,
+			.dst_offset = offsetof(nvram_data_t, state.none_mode),
 		}),
 	},
 };
