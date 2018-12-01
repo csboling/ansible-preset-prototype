@@ -4,9 +4,9 @@
 
 load_object_state_t ansible_root_object_state;
 load_object_state_t ansible_section_object_state;
-load_object_state_t ansible_app_object_state[2];
 load_buffer_state_t ansible_load_buffer_state;
-load_array_state_t ansible_load_array_state;
+load_object_state_t ansible_app_object_state[4];
+load_array_state_t ansible_load_array_state[4];
 
 const char* connected_t_options[] = {
 	"conNONE",
@@ -133,7 +133,378 @@ preset_section_handler_t ansible_shared_handlers[] = {
 /////////
 // apps
 
+preset_section_handler_t kria_handlers[] = {
+	{
+		.name = "clock_period",
+			.read = load_scalar,
+			.write = save_number,
+			.params = &((load_scalar_params_t) {
+			.dst_size = sizeof_field(nvram_data_t, kria_state.clock_period),
+				.dst_offset = offsetof(nvram_data_t, kria_state.clock_period),
+		}),
+	},
+	{
+		.name = "curr_preset",
+		.read = load_scalar,
+		.write = save_number,
+		.params = &((load_scalar_params_t) {
+			.dst_size = sizeof_field(nvram_data_t, kria_state.preset),
+			.dst_offset = offsetof(nvram_data_t, kria_state.preset),
+		}),
+	},
+	{
+		.name = "note_sync",
+		.read = load_scalar,
+		.write = save_bool,
+		.params = &((load_scalar_params_t) {
+			.dst_size = sizeof_field(nvram_data_t, kria_state.note_sync),
+			.dst_offset = offsetof(nvram_data_t, kria_state.note_sync),
+		}),
+	},
+	{
+		.name = "loop_sync",
+		.read = load_scalar,
+		.write = save_number,
+		.params = &((load_scalar_params_t) {
+			.dst_size = sizeof_field(nvram_data_t, kria_state.loop_sync),
+			.dst_offset = offsetof(nvram_data_t, kria_state.loop_sync),
+		}),
+	},
+	{
+		.name = "cue_div",
+		.read = load_scalar,
+		.write = save_number,
+		.params = &((load_scalar_params_t) {
+			.dst_size = sizeof_field(nvram_data_t, kria_state.cue_div),
+			.dst_offset = offsetof(nvram_data_t, kria_state.cue_div),
+		}),
+	},
+	{
+		.name = "cue_steps",
+		.read = load_scalar,
+		.write = save_number,
+		.params = &((load_scalar_params_t) {
+			.dst_size = sizeof_field(nvram_data_t, kria_state.cue_steps),
+			.dst_offset = offsetof(nvram_data_t, kria_state.cue_steps),
+		}),
+	},
+	{
+		.name = "meta",
+		.read = load_scalar,
+		.write = save_number,
+		.params = &((load_scalar_params_t) {
+			.dst_size = sizeof_field(nvram_data_t, kria_state.meta),
+			.dst_offset = offsetof(nvram_data_t, kria_state.meta),
+		}),
+	},
+	{
+		.name = "presets",
+		.read = load_object,
+		.write = save_object,
+		.state = &ansible_app_object_state[1],
+		.params = &((load_object_params_t) {
+			.handler_ct = 9,
+			.handlers = ((preset_section_handler_t[]) {
+				{
+					.name = "patterns",
+					.read = load_array,
+					.write = save_array,
+					.fresh = true,
+					.state = &ansible_load_array_state[1],
+					.params = &((load_array_params_t) {
+						.array_len = KRIA_NUM_PATTERNS,
+						.item_size = sizeof(kria_pattern),
+						.item_handler = &((preset_section_handler_t) {
+							.read = load_object,
+							.write = save_object,
+							.fresh = true,
+							.state = &ansible_app_object_state[2],
+							.params = &((load_object_params_t) {
+								.handler_ct = 2,
+								.handlers = ((preset_section_handler_t[]) {
+									{
+										.name = "tracks",
+										.read = load_array,
+										.write = save_array,
+										.fresh = true,
+										.state = &ansible_load_array_state[2],
+										.params = &((load_array_params_t) {
+											.array_len = 4,
+											.item_size = sizeof(kria_track),
+											.item_handler = &((preset_section_handler_t) {
+												.read = load_object,
+												.write = save_object,
+												.fresh = true,
+												.state = &ansible_app_object_state[3],
+												.params = &((load_object_params_t) {
+													.handler_ct = 14,
+													.handlers = ((preset_section_handler_t[]) {
+														{
+															.name = "tr",
+															.read = load_buffer,
+															.write = save_buffer,
+															.fresh = true,
+															.state = &ansible_load_buffer_state,
+															.params = &((load_buffer_params_t) {
+																.buf_len = sizeof_field(nvram_data_t, kria_state.k[0].p[0].t[0].tr),
+																.dst_offset = offsetof(nvram_data_t, kria_state.k[0].p[0].t[0].tr),
+															}),
+														},
+														{
+															.name = "oct",
+															.read = load_buffer,
+															.write = save_buffer,
+															.fresh = true,
+															.state = &ansible_load_buffer_state,
+															.params = &((load_buffer_params_t) {
+																.buf_len = sizeof_field(nvram_data_t, kria_state.k[0].p[0].t[0].oct),
+																.dst_offset = offsetof(nvram_data_t, kria_state.k[0].p[0].t[0].oct),
+															}),
+														},
+														{
+															.name = "note",
+															.read = load_buffer,
+															.write = save_buffer,
+															.fresh = true,
+															.state = &ansible_load_buffer_state,
+															.params = &((load_buffer_params_t) {
+																.buf_len = sizeof_field(nvram_data_t, kria_state.k[0].p[0].t[0].note),
+																.dst_offset = offsetof(nvram_data_t, kria_state.k[0].p[0].t[0].note),
+															}),
+														},
+														{
+															.name = "dur",
+															.read = load_buffer,
+															.write = save_buffer,
+															.fresh = true,
+															.state = &ansible_load_buffer_state,
+															.params = &((load_buffer_params_t) {
+																.buf_len = sizeof_field(nvram_data_t, kria_state.k[0].p[0].t[0].dur),
+																.dst_offset = offsetof(nvram_data_t, kria_state.k[0].p[0].t[0].dur),
+															}),
+														},
+														{
+															.name = "rpt",
+															.read = load_buffer,
+															.write = save_buffer,
+															.fresh = true,
+															.state = &ansible_load_buffer_state,
+															.params = &((load_buffer_params_t) {
+																.buf_len = sizeof_field(nvram_data_t, kria_state.k[0].p[0].t[0].rpt),
+																.dst_offset = offsetof(nvram_data_t, kria_state.k[0].p[0].t[0].rpt),
+															}),
+														},
+														{
+															.name = "alt_note",
+															.read = load_buffer,
+															.write = save_buffer,
+															.fresh = true,
+															.state = &ansible_load_buffer_state,
+															.params = &((load_buffer_params_t) {
+																.buf_len = sizeof_field(nvram_data_t, kria_state.k[0].p[0].t[0].alt_note),
+																.dst_offset = offsetof(nvram_data_t, kria_state.k[0].p[0].t[0].alt_note),
+															}),
+														},
+														{
+															.name = "glide",
+															.read = load_buffer,
+															.write = save_buffer,
+															.fresh = true,
+															.state = &ansible_load_buffer_state,
+															.params = &((load_buffer_params_t) {
+																.buf_len = sizeof_field(nvram_data_t, kria_state.k[0].p[0].t[0].glide),
+																.dst_offset = offsetof(nvram_data_t, kria_state.k[0].p[0].t[0].glide),
+															}),
+														},
+														{
+															.name = "p",
+															.read = load_array,
+															.write = save_array,
+															.fresh = true,
+															.state = &ansible_load_array_state[3],
+															.params = &((load_array_params_t) {
+																.array_len = KRIA_NUM_PARAMS,
+																.item_size = sizeof_field(nvram_data_t, kria_state.k[0].p[0].t[0].p[0]),
+																.item_handler = &((preset_section_handler_t) {
+																	.read = load_buffer,
+																	.write = save_buffer,
+																	.fresh = true,
+																	.state = &ansible_load_buffer_state,
+																	.params = &((load_buffer_params_t) {
+																		.buf_len = sizeof_field(nvram_data_t, kria_state.k[0].p[0].t[0].p[0]),
+																		.dst_offset = offsetof(nvram_data_t, kria_state.k[0].p[0].t[0].p[0]),
+																	}),
+																}),
+															}),
+														},
+														{
+															.name = "dur_mul",
+															.read = load_scalar,
+															.write = save_number,
+															.params = &((load_scalar_params_t) {
+																.dst_size = sizeof_field(nvram_data_t, kria_state.k[0].p[0].t[0].dur_mul),
+																.dst_offset = offsetof(nvram_data_t, kria_state.k[0].p[0].t[0].dur_mul),
+															}),
+														},
+														{
+															.name = "lstart",
+															.read = load_buffer,
+															.write = save_buffer,
+															.fresh = true,
+															.state = &ansible_load_buffer_state,
+															.params = &((load_buffer_params_t) {
+																.buf_len = sizeof_field(nvram_data_t, kria_state.k[0].p[0].t[0].lstart),
+																.dst_offset = offsetof(nvram_data_t, kria_state.k[0].p[0].t[0].lstart),
+															}),
+														},
+														{
+															.name = "lend",
+															.read = load_buffer,
+															.write = save_buffer,
+															.fresh = true,
+															.state = &ansible_load_buffer_state,
+															.params = &((load_buffer_params_t) {
+																.buf_len = sizeof_field(nvram_data_t, kria_state.k[0].p[0].t[0].lend),
+																.dst_offset = offsetof(nvram_data_t, kria_state.k[0].p[0].t[0].lend),
+															}),
+														},
+														{
+															.name = "lswap",
+															.read = load_buffer,
+															.write = save_buffer,
+															.fresh = true,
+															.state = &ansible_load_buffer_state,
+															.params = &((load_buffer_params_t) {
+																.buf_len = sizeof_field(nvram_data_t, kria_state.k[0].p[0].t[0].lswap),
+																.dst_offset = offsetof(nvram_data_t, kria_state.k[0].p[0].t[0].lswap),
+															}),
+														},
+														{
+															.name = "tmul",
+															.read = load_buffer,
+															.write = save_buffer,
+															.fresh = true,
+															.state = &ansible_load_buffer_state,
+															.params = &((load_buffer_params_t) {
+																.buf_len = sizeof_field(nvram_data_t, kria_state.k[0].p[0].t[0].tmul),
+																.dst_offset = offsetof(nvram_data_t, kria_state.k[0].p[0].t[0].tmul),
+															}),
+														},
+													}),
+												}),
+											}),
+										}),
+									},
+									{
+										.name = "scale",
+										.read = load_scalar,
+										.write = save_number,
+										.params = &((load_scalar_params_t) {
+											.dst_size = sizeof_field(nvram_data_t, kria_state.k[0].p[0].scale),
+											.dst_offset = offsetof(nvram_data_t, kria_state.k[0].p[0].scale),
+										}),
+									},
+								}),
+							}),
+						}),
+					}),
+				},
+				{
+					.name = "curr_pattern",
+					.read = load_scalar,
+					.write = save_number,
+					.params = &((load_scalar_params_t) {
+						.dst_size = sizeof_field(nvram_data_t, kria_state.k[0].pattern),
+						.dst_offset = offsetof(nvram_data_t, kria_state.k[0].pattern),
+					}),
+				},
+				{
+					.name = "meta_pat",
+					.read = load_buffer,
+					.write = save_buffer,
+					.fresh = true,
+					.state = &ansible_load_buffer_state,
+					.params = &((load_buffer_params_t) {
+						.buf_len = sizeof_field(nvram_data_t, kria_state.k[0].meta_pat),
+						.dst_offset = offsetof(nvram_data_t, kria_state.k[0].meta_pat),
+					}),
+				},
+				{
+					.name = "meta_steps",
+					.read = load_buffer,
+					.write = save_buffer,
+					.fresh = true,
+					.state = &ansible_load_buffer_state,
+					.params = &((load_buffer_params_t) {
+						.buf_len = sizeof_field(nvram_data_t, kria_state.k[0].meta_steps),
+						.dst_offset = offsetof(nvram_data_t, kria_state.k[0].meta_steps),
+					}),
+				},
+				{
+					.name = "meta_start",
+					.read = load_scalar,
+					.write = save_number,
+					.params = &((load_scalar_params_t) {
+						.dst_size = sizeof_field(nvram_data_t, kria_state.k[0].meta_start),
+						.dst_offset = offsetof(nvram_data_t, kria_state.k[0].meta_start),
+					}),
+				},
+				{
+					.name = "meta_end",
+					.read = load_scalar,
+					.write = save_number,
+					.params = &((load_scalar_params_t) {
+						.dst_size = sizeof_field(nvram_data_t, kria_state.k[0].meta_end),
+						.dst_offset = offsetof(nvram_data_t, kria_state.k[0].meta_end),
+					}),
+				},
+				{
+					.name = "meta_len",
+					.read = load_scalar,
+					.write = save_number,
+					.params = &((load_scalar_params_t) {
+						.dst_size = sizeof_field(nvram_data_t, kria_state.k[0].meta_len),
+						.dst_offset = offsetof(nvram_data_t, kria_state.k[0].meta_len),
+					}),
+				},
+				{
+					.name = "meta_lswap",
+					.read = load_scalar,
+					.write = save_number,
+					.params = &((load_scalar_params_t) {
+						.dst_size = sizeof_field(nvram_data_t, kria_state.k[0].meta_lswap),
+						.dst_offset = offsetof(nvram_data_t, kria_state.k[0].meta_lswap),
+					}),
+				},
+				{
+					.name = "glyph",
+					.read = load_buffer,
+					.write = save_buffer,
+					.fresh = true,
+					.state = &ansible_load_buffer_state,
+					.params = &((load_buffer_params_t) {
+						.buf_len = sizeof_field(nvram_data_t, kria_state.k[0].glyph),
+						.dst_offset = offsetof(nvram_data_t, kria_state.k[0].glyph),
+					}),
+				},
+			}),
+		}),
+	},
+};
+
 preset_section_handler_t ansible_app_handlers[ANSIBLE_APP_COUNT] = {
+	{
+		.name = "kria",
+		.read = load_object,
+		.write = save_object,
+		.fresh = true,
+		.state = &ansible_app_object_state[0],
+		.params = &((load_object_params_t) {
+			.handler_ct = 8,
+			.handlers = kria_handlers,
+		}),
+	},
+
 	{
 		.name = "cycles",
 		.read = load_object,
