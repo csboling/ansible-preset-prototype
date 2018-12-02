@@ -4,7 +4,7 @@
 
 #include "greatest/greatest.h"
 
-char buf[128];
+char buf[256];
 jsmntok_t tokens[8];
 nvram_data_t nvram;
 load_object_state_t object_state;

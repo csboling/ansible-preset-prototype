@@ -303,7 +303,13 @@ preset_read_result_t load_enum(jsmntok_t tok,
 		return PRESET_READ_INCOMPLETE;
 	}
 	if (tok.type == JSMN_PRIMITIVE) {
-		*dst = decode_decimal(text + tok.start, tok.end - tok.start);
+		// the only primitive that starts with n is 'null'
+		if (text[tok.start] == 'n') {
+			*dst = params->default_val;
+		}
+		else {
+			*dst = decode_decimal(text + tok.start, tok.end - tok.start);
+		}
 		return PRESET_READ_OK;
 	}
 	if (tok.type != JSMN_STRING) {
@@ -313,9 +319,10 @@ preset_read_result_t load_enum(jsmntok_t tok,
 	for (uint8_t i = 0; i < params->option_ct; i++) {
 		if (strncmp(params->options[i], text + tok.start, tok.end - tok.start) == 0) {
 			*dst = i;
-			break;
+			return PRESET_READ_OK;
 		}
 	}
+	*dst = params->default_val;
 	return PRESET_READ_OK;
 }
 
@@ -408,6 +415,9 @@ preset_read_result_t load_buffer(jsmntok_t tok,
 		state->buf_pos = 0;
 	}
 	if (tok.type != JSMN_STRING) {
+		// if the buffer spanned multiple reads, the second part will
+		// look like a primitive, even though it has a closing quote in the
+		// buffer.
 		return PRESET_READ_MALFORMED;
 	}
 	size_t start = tok.start > 0 ? tok.start : 0;

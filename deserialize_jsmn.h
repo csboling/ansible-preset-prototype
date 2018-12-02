@@ -6,6 +6,8 @@
 #include "jsmn/jsmn.h"
 #include "nvram.h"
 
+#define sizeof_field(s, m) (sizeof((((s*)0)->m)))
+
 typedef enum {
   PRESET_READ_OK,
   PRESET_READ_INCOMPLETE,
@@ -148,6 +150,7 @@ typedef struct {
 	uint8_t option_ct;
 	const char** options;
 	size_t dst_offset;
+	int default_val;
 } load_enum_params_t;
 
 preset_read_result_t load_buffer(jsmntok_t tok,
