@@ -158,7 +158,7 @@ preset_write_result_t save_buffer(
 	nvram_data_t* nvram, void* handler_def,
 	size_t src_offset);
 typedef struct {
-	size_t buf_len;
+	size_t dst_size;
 	size_t dst_offset;
 } load_buffer_params_t;
 typedef struct {

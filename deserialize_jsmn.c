@@ -416,7 +416,7 @@ preset_read_result_t load_buffer(jsmntok_t tok,
 		// length needs to be even so we always decode full bytes
 		return PRESET_READ_INCOMPLETE;
 	}
-	if (state->buf_pos + len != params->buf_len * 2) {
+	if (state->buf_pos + len != params->dst_size * 2) {
 		return PRESET_READ_MALFORMED;
 	}
 	uint8_t* dst = (uint8_t*)nvram + params->dst_offset + dst_offset;
@@ -443,7 +443,7 @@ preset_write_result_t save_buffer(
 
 	write("\"", 1);
 	uint8_t* src = (uint8_t*)nvram + src_offset + params->dst_offset;
-	for (size_t i = 0; i < params->buf_len; i++) {
+	for (size_t i = 0; i < params->dst_size; i++) {
 		nybble = encode_nybble((src[i] & 0xF0) >> 4);
 		write(&nybble, 1);
 		nybble = encode_nybble(src[i] & 0x0F);

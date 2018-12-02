@@ -14,14 +14,20 @@
 #include "deserialize_jsmn.h"
 #include "ansible_sections.h"
 
-preset_section_handler_t* find_app_handler(char* name) {
+preset_section_handler_t* find_handler(preset_section_handler_t* base, char * name) {
 	memset(&nvram, 0, sizeof(nvram_data_t));
-	for (int i = 0; i < ANSIBLE_APP_COUNT; i++) {
-		if (strcmp(ansible_app_handlers[i].name, name) == 0) {
-			return &ansible_app_handlers[i];
+	load_object_params_t* params = base->params;
+	for (int i = 0; i < params->handler_ct; i++) {
+		if (strcmp(params->handlers[i].name, name) == 0) {
+			return &params->handlers[i];
 		}
 	}
 	return NULL;
+}
+
+preset_section_handler_t* find_app_handler(char* name) {
+	preset_section_handler_t* apps = find_handler(&ansible_handler, "apps");
+	return find_handler(apps, name);
 }
 
 FILE* write_temp_file(const char* name, const char* text, size_t len) {

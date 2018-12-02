@@ -17,23 +17,18 @@ TEST skips_unknown_sections() {
 			"}"
 		"},"
 		"\"version\": \"" ANSIBLE_VERSION "\", "
+		"\"connected\": null, "
+		"\"arc_mode\": null, "
+		"\"grid_mode\": null, "
+		"\"midi_mode\": null, "
+		"\"none_mode\": null, "
 		"\"i2c_addr\": 160"
 	"}";
-	preset_section_handler_t handler = {
-		.read = load_object,
-		.write = save_object,
-		.fresh = true,
-		.state = &object_state,
-		.params = &((load_object_params_t) {
-			.handlers = ansible_meta_handlers,
-			.handler_ct = 3,
-		}),
-	};
+	preset_section_handler_t* handler = find_handler(&ansible_handler, "meta");
 	FILE* fp = write_temp_file("in.tmp", meta, sizeof(meta) - 1);
-	memset(&nvram, 0, sizeof(nvram_data_t));
 
 	preset_read_result_t result = preset_deserialize(fp,
-		&nvram, &handler,
+		&nvram, handler,
 		buf, sizeof(buf),
 		tokens, sizeof(tokens) / sizeof(jsmntok_t));
 	fclose(fp);
@@ -54,21 +49,11 @@ TEST meta_read_ok() {
 		"\"midi_mode\": \"mMidiArp\", " 
 		"\"none_mode\": \"mTT\""
 	"}";
-	preset_section_handler_t handler = {
-		.read = load_object,
-		.write = save_object,
-		.fresh = true,
-		.state = &object_state,
-		.params = &((load_object_params_t) {
-			.handlers = ansible_meta_handlers,
-			.handler_ct = 8,
-		}),
-	};
+	preset_section_handler_t* handler = find_handler(&ansible_handler, "meta");
 	FILE* fp = write_temp_file("in.tmp", meta, sizeof(meta) - 1);
-	memset(&nvram, 0, sizeof(nvram_data_t));
 
 	preset_read_result_t result = preset_deserialize(fp,
-		&nvram, &handler,
+		&nvram, handler,
 		buf, sizeof(buf),
 		tokens, sizeof(tokens) / sizeof(jsmntok_t));
 	fclose(fp);
@@ -82,24 +67,13 @@ TEST meta_read_ok() {
 	ASSERT_EQ(nvram.state.none_mode, mTT);
 
 	fp = fopen("out.tmp", "w");
-	preset_write_result_t wr_result = preset_serialize(fp, &nvram, &handler);
+	preset_write_result_t wr_result = preset_serialize(fp, &nvram, handler);
 	fclose(fp);
 
 	ASSERT_FALSE(!compare_files("in.tmp", "out.tmp"));
 
 	PASS();
 }
-
-preset_section_handler_t shared_handler = {
-	.read = load_object,
-	.write = save_object,
-	.fresh = true,
-	.state = &object_state,
-	.params = &((load_object_params_t) {
-		.handlers = ansible_shared_handlers,
-		.handler_ct = 1,
-	}),
-};
 
 TEST shared_read_ok() {
 	const char shared[] = "{"
@@ -123,10 +97,10 @@ TEST shared_read_ok() {
 		"]"
 	"}";
 	FILE* fp = write_temp_file("in.tmp", shared, sizeof(shared) - 1);
-	memset(&nvram, 0, sizeof(nvram_data_t));
+	preset_section_handler_t* handler = find_handler(&ansible_handler, "shared");
 
 	preset_read_result_t result = preset_deserialize(fp,
-		&nvram, &shared_handler,
+		&nvram, handler,
 		buf, sizeof(buf),
 		tokens, sizeof(tokens) / sizeof(jsmntok_t));
 	fclose(fp);
@@ -150,7 +124,7 @@ TEST shared_read_ok() {
 	}
 
 	fp = fopen("out.tmp", "w");
-	preset_write_result_t wr_result = preset_serialize(fp, &nvram, &shared_handler);
+	preset_write_result_t wr_result = preset_serialize(fp, &nvram, handler);
 	fclose(fp);
 
 	ASSERT_FALSE(!compare_files("in.tmp", "out.tmp"));

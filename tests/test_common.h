@@ -9,6 +9,7 @@ jsmntok_t tokens[8];
 nvram_data_t nvram;
 load_object_state_t object_state;
 
+preset_section_handler_t* find_handler(preset_section_handler_t* base, char * name);
 preset_section_handler_t* find_app_handler(char* name);
 
 FILE* write_temp_file(const char* name, const char* text, size_t len);
